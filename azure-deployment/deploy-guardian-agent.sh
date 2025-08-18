@@ -10,7 +10,7 @@ echo "🚀 Starting Legend Guardian Agent Azure Deployment..."
 # Configuration
 ACR_NAME="legendacr"
 AKS_CLUSTER_NAME="aks-legend"
-RESOURCE_GROUP="legend-rg"
+RESOURCE_GROUP="rs-finos-legend"
 NAMESPACE="legend"
 IMAGE_NAME="legend-guardian-agent"
 IMAGE_TAG="latest"
