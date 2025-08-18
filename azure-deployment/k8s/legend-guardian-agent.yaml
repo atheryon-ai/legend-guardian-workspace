@@ -1,0 +1,105 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: legend-guardian-agent
+  namespace: legend
+  labels:
+    app: legend-guardian-agent
+    component: guardian-agent
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+      name: http
+  selector:
+    app: legend-guardian-agent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legend-guardian-agent
+  namespace: legend
+  labels:
+    app: legend-guardian-agent
+    component: guardian-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: legend-guardian-agent
+  template:
+    metadata:
+      labels:
+        app: legend-guardian-agent
+        component: guardian-agent
+    spec:
+      containers:
+        - name: legend-guardian-agent
+          image: legend-guardian-agent:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          env:
+            - name: LEGEND_ENGINE_URL
+              value: "http://legend-engine:6060"
+            - name: LEGEND_SDLC_URL
+              value: "http://legend-sdlc:7070"
+            - name: LEGEND_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: legend-secrets
+                  key: api-key
+            - name: LEGEND_API_HOST
+              value: "0.0.0.0"
+            - name: LEGEND_API_PORT
+              value: "8000"
+            - name: LEGEND_API_DEBUG
+              value: "false"
+            - name: LEGEND_LOG_LEVEL
+              value: "INFO"
+            - name: VALID_API_KEYS
+              value: "azure-key-1,azure-key-2,azure-key-3"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: legend-guardian-agent-ingress
+  namespace: legend
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: guardian.52.186.106.13.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: legend-guardian-agent
+                port:
+                  number: 8000

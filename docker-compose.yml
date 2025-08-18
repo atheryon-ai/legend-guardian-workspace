@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  legend-guardian-agent:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - LEGEND_ENGINE_URL=http://legend-engine:6060
+      - LEGEND_SDLC_URL=http://legend-sdlc:7070
+      - LEGEND_API_KEY=${LEGEND_API_KEY:-}
+      - LEGEND_LOG_LEVEL=INFO
+      - VALID_API_KEYS=${VALID_API_KEYS:-demo-key}
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - legend-network
+
+  # Example Legend services (for development)
+  legend-engine:
+    image: finos/legend-engine:3.0.0
+    ports:
+      - "6300:6300"
+    environment:
+      - LEGEND_ENGINE_PORT=6300
+    networks:
+      - legend-network
+
+  legend-sdlc:
+    image: finos/legend-sdlc:3.0.0
+    ports:
+      - "6100:6100"
+    environment:
+      - LEGEND_SDLC_PORT=6100
+    networks:
+      - legend-network
+
+networks:
+  legend-network:
+    driver: bridge
+
+volumes:
+  logs:

@@ -1,0 +1,11 @@
+architecture: standalone
+auth:
+  enabled: true
+  rootPassword: "legend123456"
+  usernames: ["legend"]
+  databases: ["legend"]
+persistence:
+  enabled: true
+  size: 5Gi
+service:
+  type: ClusterIP

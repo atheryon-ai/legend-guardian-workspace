@@ -1,0 +1,225 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: legend-config
+  namespace: legend
+data:
+  # MongoDB Configuration
+  MONGODB_URI: "mongodb://admin:admin123@mongodb:27017/legend?authSource=admin"
+  MONGODB_NAME: "legend"
+  MONGO_SESSION_ENABLED: "false"
+  
+  # Engine Configuration
+  METADATA_PURE_HOST: "legend-engine"
+  METADATA_PURE_PORT: "6300"
+  METADATA_ALLOY_HOST: "legend-engine"
+  METADATA_ALLOY_PORT: "6300"
+  ENGINE_PORT: "6300"
+  ENGINE_HOST: "0.0.0.0"
+  
+  # SDLC Configuration
+  SDLC_PORT: "6100"
+  SDLC_ADMIN_PORT: "6101"
+  SDLC_HOST: "0.0.0.0"
+  GITLAB_HOST: "gitlab.com"
+  GITLAB_APP_ID: "not-configured"
+  GITLAB_APP_SECRET: "not-configured"
+  GITLAB_OAUTH_REDIRECT: "http://legend-sdlc:6100/api/auth/callback"
+  
+  # Studio Configuration
+  LEGEND_STUDIO_SDLC_SERVER_URL: "http://legend-sdlc:6100"
+  LEGEND_STUDIO_ENGINE_SERVER_URL: "http://legend-engine:6300"
+  LEGEND_STUDIO_PORT: "8080"
+  LEGEND_STUDIO_HOST: "0.0.0.0"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legend-engine
+  namespace: legend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: legend-engine
+  template:
+    metadata:
+      labels:
+        app: legend-engine
+    spec:
+      containers:
+      - name: legend-engine
+        image: finos/legend-engine-server:4.26.4
+        ports:
+        - containerPort: 6300
+        env:
+        - name: JAVA_OPTS
+          value: "-Xmx1g -Xms512m"
+        envFrom:
+        - configMapRef:
+            name: legend-config
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /api/server/v1/info
+            port: 6300
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/server/v1/info
+            port: 6300
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: legend-engine
+  namespace: legend
+spec:
+  ports:
+    - port: 6300
+      targetPort: 6300
+      name: http
+  selector:
+    app: legend-engine
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legend-sdlc
+  namespace: legend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: legend-sdlc
+  template:
+    metadata:
+      labels:
+        app: legend-sdlc
+    spec:
+      containers:
+      - name: legend-sdlc
+        image: finos/legend-sdlc-server:0.173.2
+        ports:
+        - containerPort: 6100
+          name: http
+        - containerPort: 6101
+          name: admin
+        env:
+        - name: JAVA_OPTS
+          value: "-Xmx512m -Xms256m"
+        envFrom:
+        - configMapRef:
+            name: legend-config
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/info
+            port: 6100
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/info
+            port: 6100
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: legend-sdlc
+  namespace: legend
+spec:
+  ports:
+    - port: 6100
+      targetPort: 6100
+      name: http
+    - port: 6101
+      targetPort: 6101
+      name: admin
+  selector:
+    app: legend-sdlc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legend-studio
+  namespace: legend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: legend-studio
+  template:
+    metadata:
+      labels:
+        app: legend-studio
+    spec:
+      containers:
+      - name: legend-studio
+        image: finos/legend-studio:28.3.0
+        ports:
+        - containerPort: 8080
+        env:
+        - name: LEGEND_STUDIO_SDLC_SERVER_URL
+          value: "http://legend-sdlc:6100"
+        - name: LEGEND_STUDIO_ENGINE_SERVER_URL
+          value: "http://legend-engine:6300"
+        envFrom:
+        - configMapRef:
+            name: legend-config
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /studio
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /studio
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: legend-studio
+  namespace: legend
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+      name: http
+  selector:
+    app: legend-studio
