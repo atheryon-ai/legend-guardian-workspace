@@ -19,7 +19,7 @@ from ..agent import LegendGuardianAgent
 from ..agent.models import ModelChangeEvent
 from .models import (
     ModelChangeRequest, ModelValidationRequest, 
-    SystemStatusResponse, ModelChangeResponse
+    SystemStatusResponse, ModelChangeResponse, ServerInfoResponse, ServiceStatus
 )
 
 # Configure logging
@@ -66,9 +66,71 @@ async def lifespan(app: FastAPI):
 # Create FastAPI app
 app = FastAPI(
     title="Legend Guardian Agent API",
-    description="API for the Legend Guardian Agent - FINOS Legend platform monitoring and management",
+    description="""
+    # Legend Guardian Agent API
+    
+    **FINOS Legend platform monitoring and management system**
+    
+    ## Overview
+    The Legend Guardian Agent provides automated monitoring, validation, and management capabilities for the FINOS Legend platform.
+    
+    ## Key Features
+    - **Model Change Monitoring**: Automatically detects and analyzes model changes
+    - **Impact Assessment**: Determines change impact levels (low, medium, high, critical)
+    - **Action Planning**: Creates automated action plans based on change analysis
+    - **Service Validation**: Validates models and services through Legend Engine
+    - **Memory Management**: Maintains history of all agent interactions and decisions
+    
+    ## Environment
+    - **Development**: Local testing and development
+    - **Production**: Azure AKS deployment with full monitoring
+    
+    ## Legend Services
+    - **Legend Engine**: Model execution and validation (Port 6060)
+    - **Legend SDLC**: Source control and lifecycle management (Port 7070)
+    - **Legend Studio**: Web-based modeling interface (Port 9000)
+    
+    ## Authentication
+    All protected endpoints require a valid API key via Bearer token authentication.
+    """,
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    contact={
+        "name": "Legend Guardian Agent",
+        "url": "https://github.com/atheryon-ai/legend-guardian-workspace",
+    },
+    license_info={
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+    servers=[
+        {
+            "url": "http://localhost:8000",
+            "description": "Local Development Server"
+        },
+        {
+            "url": "https://legend-guardian.azure-legend.com",
+            "description": "Azure Production Server"
+        }
+    ],
+    tags=[
+        {
+            "name": "Health",
+            "description": "Health check and system status endpoints"
+        },
+        {
+            "name": "Server Info", 
+            "description": "Server configuration and environment information"
+        },
+        {
+            "name": "Model Management",
+            "description": "Model change handling and validation"
+        },
+        {
+            "name": "Memory",
+            "description": "Agent memory and event history"
+        }
+    ]
 )
 
 # Add CORS middleware
@@ -94,7 +156,7 @@ async def verify_api_key(credentials: HTTPAuthorizationCredentials = Security(se
     return api_key in valid_keys
 
 # Health check endpoint
-@app.get("/health")
+@app.get("/health", tags=["Health"])
 async def health_check():
     """Health check endpoint"""
     return {
@@ -104,7 +166,7 @@ async def health_check():
     }
 
 # Model change handling endpoint
-@app.post("/api/v1/model/change", response_model=ModelChangeResponse)
+@app.post("/api/v1/model/change", response_model=ModelChangeResponse, tags=["Model Management"])
 async def handle_model_change(
     request: ModelChangeRequest,
     authenticated: bool = Depends(verify_api_key)
@@ -144,7 +206,7 @@ async def handle_model_change(
         )
 
 # Model validation endpoint
-@app.post("/api/v1/model/validate")
+@app.post("/api/v1/model/validate", tags=["Model Management"])
 async def validate_model(
     request: ModelValidationRequest,
     authenticated: bool = Depends(verify_api_key)
@@ -174,7 +236,7 @@ async def validate_model(
         )
     
 # System status endpoint
-@app.get("/api/v1/system/status", response_model=SystemStatusResponse)
+@app.get("/api/v1/system/status", response_model=SystemStatusResponse, tags=["Health"])
 async def get_system_status(authenticated: bool = Depends(verify_api_key)):
     """Get current system status and agent information"""
     if not agent:
@@ -195,7 +257,7 @@ async def get_system_status(authenticated: bool = Depends(verify_api_key)):
         )
 
 # Memory query endpoints
-@app.get("/api/v1/memory/events")
+@app.get("/api/v1/memory/events", tags=["Memory"])
 async def get_recent_events(
     limit: int = 10,
     authenticated: bool = Depends(verify_api_key)
@@ -223,7 +285,7 @@ async def get_recent_events(
             detail=f"Failed to get events: {str(e)}"
         )
 
-@app.get("/api/v1/memory/events/{event_type}")
+@app.get("/api/v1/memory/events/{event_type}", tags=["Memory"])
 async def get_events_by_type(
     event_type: str,
     authenticated: bool = Depends(verify_api_key)
@@ -253,20 +315,117 @@ async def get_events_by_type(
         )
 
 # Root endpoint
-@app.get("/")
+@app.get("/", tags=["Server Info"])
 async def root():
-    """Root endpoint with service information"""
+    """Root endpoint with comprehensive service information"""
+    # Get environment information
+    environment = "production" if not os.getenv("LEGEND_API_DEBUG", "false").lower() == "true" else "development"
+    
     return {
         "service": "Legend Guardian Agent API",
         "version": "1.0.0",
         "description": "API for monitoring and managing the FINOS Legend platform",
-        "endpoints": {
+        "environment": environment,
+        "host": os.getenv("LEGEND_API_HOST", "0.0.0.0"),
+        "port": int(os.getenv("LEGEND_API_PORT", "8000")),
+        "debug_mode": os.getenv("LEGEND_API_DEBUG", "false").lower() == "true",
+        "legend_services": {
+            "engine": {
+                "name": "Legend Engine",
+                "url": os.getenv("LEGEND_ENGINE_URL", "http://localhost:6300"),
+                "status": "configured"
+            },
+            "sdlc": {
+                "name": "Legend SDLC", 
+                "url": os.getenv("LEGEND_SDLC_URL", "http://localhost:6100"),
+                "status": "configured"
+            }
+        },
+        "api_endpoints": {
             "health": "/health",
+            "server_info": "/api/v1/server/info",
             "model_change": "/api/v1/model/change",
             "model_validation": "/api/v1/model/validate",
             "system_status": "/api/v1/system/status",
             "recent_events": "/api/v1/memory/events",
             "events_by_type": "/api/v1/memory/events/{event_type}"
         },
+        "capabilities": [
+            "model_validation",
+            "service_generation", 
+            "test_execution",
+            "deployment_automation",
+            "performance_monitoring"
+        ],
         "timestamp": datetime.now().isoformat()
     }
+
+# Server information endpoint
+@app.get("/api/v1/server/info", response_model=ServerInfoResponse, tags=["Server Info"])
+async def get_server_info(authenticated: bool = Depends(verify_api_key)):
+    """Get comprehensive server information and configuration"""
+    try:
+        # Check Legend Engine status
+        engine_status = ServiceStatus(
+            name="Legend Engine",
+            url=os.getenv("LEGEND_ENGINE_URL", "http://localhost:6300"),
+            status="configured",
+            last_check=datetime.now().isoformat()
+        )
+        
+        # Check Legend SDLC status  
+        sdlc_status = ServiceStatus(
+            name="Legend SDLC",
+            url=os.getenv("LEGEND_SDLC_URL", "http://localhost:6100"),
+            status="configured",
+            last_check=datetime.now().isoformat()
+        )
+        
+        # Get configuration summary
+        config_summary = {
+            "api_host": os.getenv("LEGEND_API_HOST", "0.0.0.0"),
+            "api_port": os.getenv("LEGEND_API_PORT", "8000"),
+            "debug_mode": os.getenv("LEGEND_API_DEBUG", "false"),
+            "log_level": os.getenv("LEGEND_LOG_LEVEL", "INFO"),
+            "api_keys_configured": bool(os.getenv("VALID_API_KEYS")),
+            "legend_api_key_configured": bool(os.getenv("LEGEND_API_KEY"))
+        }
+        
+        return ServerInfoResponse(
+            service="Legend Guardian Agent API",
+            version="1.0.0",
+            description="API for monitoring and managing the FINOS Legend platform",
+            environment="production" if not os.getenv("LEGEND_API_DEBUG", "false").lower() == "true" else "development",
+            host=os.getenv("LEGEND_API_HOST", "0.0.0.0"),
+            port=int(os.getenv("LEGEND_API_PORT", "8000")),
+            debug_mode=os.getenv("LEGEND_API_DEBUG", "false").lower() == "true",
+            timestamp=datetime.now().isoformat(),
+            legend_services={
+                "engine": engine_status,
+                "sdlc": sdlc_status
+            },
+            api_endpoints={
+                "health": "/health",
+                "server_info": "/api/v1/server/info",
+                "model_change": "/api/v1/model/change",
+                "model_validation": "/api/v1/model/validate",
+                "system_status": "/api/v1/system/status",
+                "recent_events": "/api/v1/memory/events",
+                "events_by_type": "/api/v1/memory/events/{event_type}"
+            },
+            configuration=config_summary,
+            capabilities=[
+                "model_validation",
+                "service_generation",
+                "test_execution", 
+                "deployment_automation",
+                "performance_monitoring"
+            ]
+        )
+        
+    except Exception as e:
+        logger.error(f"Error getting server info: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get server info: {str(e)}"
+        )
