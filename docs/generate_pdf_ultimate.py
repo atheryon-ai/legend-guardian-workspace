@@ -80,7 +80,7 @@ def create_enhanced_mermaid_config():
     
     return config_file
 
-def render_mermaid_with_theme_testing(mermaid_code, output_path):
+def render_mermaid_with_theme_testing(mermaid_code, output_path, diagram_name):
     """Render Mermaid with multiple theme testing for best text visibility"""
     themes_to_test = ["default", "forest", "neutral", "dark"]
     
@@ -115,39 +115,82 @@ def render_mermaid_with_theme_testing(mermaid_code, output_path):
             os.unlink(config_file)
             
             if result.returncode == 0:
-                print(f"✅ Successfully rendered with {theme} theme")
+                print(f"✅ Successfully rendered '{diagram_name}' with {theme} theme")
                 # Use the first successful theme
                 os.rename(theme_output, output_path)
                 return True
             else:
-                print(f"⚠️  Theme {theme} failed: {result.stderr}")
+                print(f"⚠️  Theme {theme} failed for '{diagram_name}': {result.stderr}")
                 # Clean up failed output
                 if os.path.exists(theme_output):
                     os.unlink(theme_output)
                 
         except Exception as e:
-            print(f"❌ Error with theme {theme}: {e}")
+            print(f"❌ Error with theme {theme} for '{diagram_name}': {e}")
             continue
     
-    print("❌ All themes failed, using fallback")
+    print(f"❌ All themes failed for '{diagram_name}', using fallback")
     return False
+
+def cleanup_old_diagrams(image_dir):
+    """Clean up old diagram files with generic names"""
+    try:
+        for file in os.listdir(image_dir):
+            if file.startswith('diagram_') and file.endswith('.svg'):
+                old_file = os.path.join(image_dir, file)
+                os.unlink(old_file)
+                print(f"🗑️  Cleaned up old file: {file}")
+    except Exception as e:
+        print(f"⚠️  Cleanup warning: {e}")
 
 def replace_mermaid_with_images(markdown_content, image_dir):
     """Replace Mermaid blocks with image references"""
+    # Clean up old diagram files first
+    cleanup_old_diagrams(image_dir)
+    
+    # Define diagram names based on content patterns
+    diagram_names = [
+        "High-Level System Architecture",
+        "Detailed Component Architecture", 
+        "Network Architecture & Ports",
+        "Authentication & Security",
+        "Data Flow Architecture",
+        "Deployment Architecture"
+    ]
+    
     def replace_block(match):
+        # Get the current diagram index from the match object
+        current_index = len([m for m in re.finditer(r'```mermaid\s*\n(.*?)\n```', markdown_content, re.DOTALL) if m.start() <= match.start()])
+        
         mermaid_code = match.group(1)
-        # Generate filename based on content hash
-        filename = f"diagram_{hash(mermaid_code) % 10000}.svg"
-        image_path = os.path.join(image_dir, filename)
+        
+        # Get diagram name (0-indexed)
+        diagram_index = current_index - 1
+        if diagram_index < len(diagram_names):
+            diagram_name = diagram_names[diagram_index]
+        else:
+            diagram_name = f"Diagram_{diagram_index + 1}"
+        
+        print(f"🔄 Processing diagram {diagram_index + 1}: {diagram_name}")
+        
+        # Create descriptive filename
+        safe_name = diagram_name.replace(" ", "_").replace("&", "and").replace("-", "_")
+        svg_filename = f"{safe_name}.svg"
+        
+        svg_path = os.path.join(image_dir, svg_filename)
         
         # Render the diagram with theme testing
-        if render_mermaid_with_theme_testing(mermaid_code, image_path):
-            return f'\n![Architecture Diagram]({image_path})\n'
+        if render_mermaid_with_theme_testing(mermaid_code, svg_path, diagram_name):
+            print(f"✅ Successfully created '{diagram_name}' as SVG")
+            # Use SVG directly for better text visibility in PDF
+            return f'\n![{diagram_name}]({svg_path})\n'
         else:
             return f'\n```mermaid\n{mermaid_code}\n```\n'
     
     pattern = r'```mermaid\s*\n(.*?)\n```'
-    return re.sub(pattern, replace_block, markdown_content, flags=re.DOTALL)
+    result = re.sub(pattern, replace_block, markdown_content, flags=re.DOTALL)
+    
+    return result
 
 def create_ultimate_css():
     """Create ultimate CSS for maximum readability"""
