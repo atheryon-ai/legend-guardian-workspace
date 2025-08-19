@@ -1,0 +1,152 @@
+version: '3.8'
+
+# Complete Legend Platform Stack for Local Development
+# Includes all Legend services plus Guardian Agent
+
+services:
+  # MongoDB - Primary datastore (required by all services)
+  mongodb:
+    image: mongo:5.0
+    container_name: legend-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-admin}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-legend}
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - legend-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh mongodb://admin:admin@localhost:27017/legend?authSource=admin --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Legend Engine - Core execution engine
+  legend-engine:
+    image: finos/legend-engine-server:${LEGEND_ENGINE_VERSION:-4.40.3}
+    container_name: legend-engine
+    ports:
+      - "${LEGEND_ENGINE_PORT:-6300}:6300"
+    environment:
+      - LEGEND_ENGINE_PORT=6300
+      - LEGEND_ENGINE_HOST=0.0.0.0
+      - MONGODB_URI=mongodb://admin:admin@mongodb:27017/legend?authSource=admin
+      - JAVA_OPTS=-Xmx2g -Xms1g -XX:+UseG1GC
+    volumes:
+      - ./config/engine-config.yml:/config/config.yml:ro
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - legend-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6300/api/server/v1/info"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Legend SDLC - Source control and lifecycle management
+  legend-sdlc:
+    image: finos/legend-sdlc-server:${LEGEND_SDLC_VERSION:-0.195.0}
+    container_name: legend-sdlc
+    ports:
+      - "${LEGEND_SDLC_PORT:-6100}:6100"
+    environment:
+      - LEGEND_SDLC_PORT=6100
+      - LEGEND_SDLC_HOST=0.0.0.0
+      - MONGODB_URI=mongodb://admin:admin@mongodb:27017/legend?authSource=admin
+      - GITLAB_HOST=${GITLAB_HOST:-gitlab.com}
+      - GITLAB_APP_ID=${GITLAB_APP_ID}
+      - GITLAB_APP_SECRET=${GITLAB_APP_SECRET}
+      - JAVA_OPTS=-Xmx2g -Xms1g -XX:+UseG1GC
+    volumes:
+      - ./config/sdlc-config.yml:/config/config.yml:ro
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - legend-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6100/api/info"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Legend Studio - Web-based IDE
+  legend-studio:
+    image: finos/legend-studio:${LEGEND_STUDIO_VERSION:-13.113.0}
+    container_name: legend-studio
+    ports:
+      - "${LEGEND_STUDIO_PORT:-9000}:9000"
+    environment:
+      - LEGEND_STUDIO_PORT=9000
+      - LEGEND_ENGINE_URL=http://legend-engine:6300
+      - LEGEND_SDLC_URL=http://legend-sdlc:6100
+      # For browser access (use host ports)
+      - REACT_APP_LEGEND_ENGINE_URL=http://localhost:6300
+      - REACT_APP_LEGEND_SDLC_URL=http://localhost:6100
+    depends_on:
+      - legend-engine
+      - legend-sdlc
+    networks:
+      - legend-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Legend Guardian Agent - Monitoring and automation
+  legend-guardian:
+    build: 
+      context: ../..
+      dockerfile: Dockerfile
+    container_name: legend-guardian
+    ports:
+      - "8000:8000"
+    environment:
+      # Service URLs (internal network)
+      - LEGEND_ENGINE_URL=http://legend-engine:6300
+      - LEGEND_SDLC_URL=http://legend-sdlc:6100
+      # API Configuration
+      - LEGEND_API_KEY=${LEGEND_API_KEY:-demo-key}
+      - VALID_API_KEYS=${VALID_API_KEYS:-demo-key,test-key}
+      - LEGEND_LOG_LEVEL=${LEGEND_LOG_LEVEL:-INFO}
+      # Optional settings
+      - LEGEND_API_HOST=0.0.0.0
+      - LEGEND_API_PORT=8000
+      - LEGEND_API_DEBUG=${LEGEND_API_DEBUG:-false}
+    volumes:
+      - ../../logs:/app/logs
+      - ../../src:/app/src:ro  # Mount source for development (optional)
+    depends_on:
+      - legend-engine
+      - legend-sdlc
+    networks:
+      - legend-network
+    profiles:
+      - full  # Only start with --profile full flag
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  legend-network:
+    driver: bridge
+    name: legend-network
+
+volumes:
+  mongodb-data:
+    driver: local
+    name: legend-mongodb-data

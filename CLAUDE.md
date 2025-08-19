@@ -172,3 +172,23 @@ curl -H "Authorization: Bearer your-api-key" http://localhost:8000/api/v1/model/
 2. Create request/response models in `src/api/models.py`
 3. Implement business logic in Guardian Agent
 4. Add authentication via `Depends(get_current_user)`
+
+### Commit and Pull Request Guidelines
+
+#### Commit Messages
+- Use concise, imperative mood (e.g., "Add validation", "Fix memory leak", "Update dependencies")
+- Include scope in subject when relevant: "feat: Add model validation endpoint"
+- Keep subject line under 50 characters
+- Add body for complex changes explaining the "why"
+
+#### Pull Requests
+- Include clear description of changes
+- Link related issues with "Fixes #123" or "Relates to #456"
+- Include test results and coverage
+- Update documentation and diagrams when UI/API changes
+- Run quality checks before opening PR:
+  ```bash
+  black src/ tests/
+  flake8 src/ tests/
+  pytest tests/ -v
+  ```

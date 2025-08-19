@@ -34,6 +34,7 @@ venv.bak/
 .env.development.local
 .env.test.local
 .env.production.local
+secrets.env
 
 # IDE
 .vscode/
@@ -60,6 +61,8 @@ logs/
 
 # Kubernetes
 *.bak
+k8s/processed/
+azure-deployment/k8s/processed/
 
 # Testing
 .coverage
