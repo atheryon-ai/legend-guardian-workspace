@@ -11,6 +11,17 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Load common variables
 source "$SCRIPT_DIR/../common.env"
 
+# Load secrets if available (from parent directory)
+if [ -f "$SCRIPT_DIR/../../secrets.env" ]; then
+    print_status "Loading secrets from secrets.env..."
+    source "$SCRIPT_DIR/../../secrets.env"
+elif [ -f "$SCRIPT_DIR/../../.env.local" ]; then
+    print_status "Loading secrets from .env.local..."
+    source "$SCRIPT_DIR/../../.env.local"
+else
+    print_warning "No secrets file found. Using placeholder values from common.env"
+fi
+
 # Load SDLC-specific variables
 source "$SCRIPT_DIR/sdlc.env"
 

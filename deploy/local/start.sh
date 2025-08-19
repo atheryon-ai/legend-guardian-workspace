@@ -33,11 +33,22 @@ check_prerequisites() {
     fi
     
     # Check for .env file
-    if [ ! -f .env ]; then
-        print_warning ".env file not found. Creating from template..."
-        cp .env.example .env
-        print_status "Please edit .env file with your GitLab OAuth credentials (optional)"
-    fi
+if [ ! -f .env ]; then
+    print_warning ".env file not found. Creating from template..."
+    cp .env.example .env
+    print_status "Please edit .env file with your GitLab OAuth credentials (optional)"
+fi
+
+# Load secrets if available (from parent directory)
+if [ -f "../secrets.env" ]; then
+    print_status "Loading secrets from secrets.env..."
+    source "../secrets.env"
+elif [ -f "../.env.local" ]; then
+    print_status "Loading secrets from .env.local..."
+    source "../.env.local"
+else
+    print_warning "No secrets file found. Using default values"
+fi
     
     # Check port availability
     for port in 6100 6300 9000 27017; do

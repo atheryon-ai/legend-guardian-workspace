@@ -120,6 +120,21 @@ deploy/
 
 ## 🔧 Configuration
 
+### **Secrets Management**
+
+Before deploying, you need to configure your secrets:
+
+```bash
+# Run the secrets setup script
+./setup-secrets.sh
+
+# Or manually create secrets.env from template
+cp secrets.example secrets.env
+# Edit secrets.env with your real values
+```
+
+**Important:** Never commit your `secrets.env` file to git!
+
 ### **Configuration Files Hierarchy**
 
 1. **`common.env`** - Shared across all services
@@ -144,6 +159,18 @@ deploy/
    - `legend-engine/config/engine-config.yml`
    - `local/config/engine-config.yml` (local development)
    - `local/config/sdlc-config.yml` (local development)
+
+### **Environment Variables and Secrets**
+
+The deployment system automatically loads secrets in this order:
+1. **`secrets.env`** - Your real production secrets (git-ignored)
+2. **`.env.local`** - Alternative secrets file (git-ignored)
+3. **`common.env`** - Safe placeholder values (committed to git)
+
+This means:
+- **Development**: Use `secrets.env` with real values
+- **CI/CD**: Use environment variables or secure secret management
+- **Team sharing**: Share `secrets.example` template
 
 ### **Customizing Deployments**
 

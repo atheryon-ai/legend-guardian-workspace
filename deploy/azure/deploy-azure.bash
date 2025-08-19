@@ -14,6 +14,17 @@ else
     exit 1
 fi
 
+# Load secrets if available (from parent directory)
+if [ -f "../secrets.env" ]; then
+    echo "🔐 Loading secrets from secrets.env..."
+    source "../secrets.env"
+elif [ -f "../.env.local" ]; then
+    echo "🔐 Loading secrets from .env.local..."
+    source "../.env.local"
+else
+    echo "⚠️  No secrets file found. Using placeholder values from azure-legend.env"
+fi
+
 # Configuration from environment variables
 SUBSCRIPTION_ID="$AZURE_SUBSCRIPTION_ID"
 RESOURCE_GROUP="$AZURE_RESOURCE_GROUP"

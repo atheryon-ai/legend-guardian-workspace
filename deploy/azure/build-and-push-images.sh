@@ -14,6 +14,17 @@ else
     exit 1
 fi
 
+# Load secrets if available (from parent directory)
+if [ -f "$(dirname "$0")/../secrets.env" ]; then
+    echo "🔐 Loading secrets from secrets.env..."
+    source "$(dirname "$0")/../secrets.env"
+elif [ -f "$(dirname "$0")/../.env.local" ]; then
+    echo "🔐 Loading secrets from .env.local..."
+    source "$(dirname "$0")/../.env.local"
+else
+    echo "⚠️  No secrets file found. Using placeholder values from azure-legend.env"
+fi
+
 echo "🐳 Building and Pushing Legend Images to Azure Container Registry"
 echo "================================================================"
 echo "ACR Login Server: $AZURE_ACR_LOGIN_SERVER"
