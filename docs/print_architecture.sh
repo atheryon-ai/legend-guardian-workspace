@@ -2,23 +2,24 @@
 # Print Architecture Documentation Script
 # Generates PDF with rendered Mermaid diagrams and proper text colors
 
-echo "🔄 Generating PDF with Mermaid diagrams..."
-echo "📊 Rendering architecture diagrams..."
-echo "🎨 Applying custom styling for better readability..."
+echo "🔄 Generating Ultimate PDF with Mermaid diagrams..."
+echo "📊 Rendering architecture diagrams with theme testing..."
+echo "🎨 Applying ultimate styling for maximum readability..."
 
-# Run the improved Python script
-python generate_pdf_fixed.py
+# Run the ultimate Python script
+python generate_pdf_ultimate.py
 
 if [ $? -eq 0 ]; then
     echo ""
     echo "✅ Success! Your architecture documentation is ready:"
-    echo "📄 PDF: docs/architecture-printable.pdf"
+    echo "📄 PDF: docs/architecture-ultimate.pdf"
     echo "🖼️  Images: docs/images/"
     echo ""
-    echo "🎨 Features:"
-    echo "   • High contrast text colors for readability"
+    echo "🎨 Ultimate Features:"
+    echo "   • Maximum text contrast (pure black on white)"
+    echo "   • Mermaid diagrams with optimal text visibility"
+    echo "   • Theme testing for best diagram rendering"
     echo "   • Professional styling and typography"
-    echo "   • Rendered Mermaid diagrams as images"
     echo "   • Table of contents with navigation"
     echo ""
     echo "🖨️  You can now:"
@@ -27,7 +28,7 @@ if [ $? -eq 0 ]; then
     echo "   • Share it with your team"
     echo ""
     echo "📁 File sizes:"
-    ls -lh docs/architecture-printable.pdf
+    ls -lh docs/architecture-ultimate.pdf
     echo ""
     echo "🔄 To regenerate, just run: ./docs/print_architecture.sh"
 else

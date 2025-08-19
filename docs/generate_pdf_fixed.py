@@ -19,26 +19,76 @@ def extract_mermaid_blocks(markdown_content):
     
     return mermaid_blocks
 
+def create_mermaid_config():
+    """Create custom Mermaid configuration for better text visibility"""
+    config_content = {
+        "theme": "forest",
+        "themeVariables": {
+            "fontFamily": "Arial, sans-serif",
+            "fontSize": "14px",
+            "primaryColor": "#2c3e50",
+            "primaryTextColor": "#ffffff",
+            "primaryBorderColor": "#34495e",
+            "lineColor": "#34495e",
+            "secondaryColor": "#3498db",
+            "tertiaryColor": "#e74c3c",
+            "noteBkgColor": "#f8f9fa",
+            "noteBorderColor": "#dee2e6",
+            "noteTextColor": "#333333",
+            "errorBkgColor": "#f8d7da",
+            "errorTextColor": "#721c24"
+        },
+        "flowchart": {
+            "htmlLabels": True,
+            "curve": "basis"
+        },
+        "sequence": {
+            "diagramMarginX": 50,
+            "diagramMarginY": 10,
+            "actorMargin": 50,
+            "width": 150,
+            "height": 65,
+            "boxMargin": 10,
+            "boxTextMargin": 5,
+            "noteMargin": 10,
+            "messageMargin": 35
+        }
+    }
+    
+    config_file = "docs/mermaid-config.json"
+    import json
+    with open(config_file, 'w') as f:
+        json.dump(config_content, f, indent=2)
+    
+    return config_file
+
 def render_mermaid_to_svg(mermaid_code, output_path):
-    """Render Mermaid code to SVG using mmdc with proper styling"""
+    """Render Mermaid code to SVG using mmdc with proper styling for text visibility"""
     try:
         # Create temporary file with Mermaid code
         with tempfile.NamedTemporaryFile(mode='w', suffix='.mmd', delete=False) as f:
             f.write(mermaid_code)
             temp_file = f.name
         
-        # Render using mmdc with better styling
+        # Create custom Mermaid configuration
+        config_file = create_mermaid_config()
+        
+        # Render using mmdc with custom configuration for better text visibility
         cmd = [
             'mmdc', 
             '-i', temp_file, 
             '-o', output_path,
             '-b', 'white',  # White background
-            '-t', 'default'  # Default theme for better contrast
+            '-t', 'forest',  # Forest theme for better text contrast
+            '-w', '1200',    # Wider width for better text spacing
+            '-H', '800',     # Height for better layout
+            '-c', config_file  # Custom configuration
         ]
         result = subprocess.run(cmd, capture_output=True, text=True)
         
         # Clean up temp file
         os.unlink(temp_file)
+        os.unlink(config_file)
         
         if result.returncode == 0:
             return True
