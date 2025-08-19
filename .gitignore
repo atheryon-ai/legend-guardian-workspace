@@ -60,6 +60,8 @@ logs/
 
 # Kubernetes
 *.bak
+k8s/processed/
+azure-deployment/k8s/processed/
 
 # Testing
 .coverage

@@ -1,0 +1,25 @@
+server:
+  applicationContextPath: "/"
+  applicationConnectors:
+    - type: http
+      port: 6300
+
+logging:
+  level: INFO
+  appenders:
+    - type: console
+
+swagger:
+  enabled: false
+
+# Minimal pac4j configuration compatible with Legend Engine 4.x
+pac4j:
+  bypassPaths:
+    - "/api/health"
+    - "/api/server/info"
+    - "/api/server/v1/info"
+  sessionTokenName: LegendSessionToken
+  mongoSession:
+    enabled: false
+  clients: []
+  authorizers: {}
