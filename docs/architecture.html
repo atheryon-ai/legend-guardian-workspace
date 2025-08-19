@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>architecture</title>
+  <style>
+html {
+color: #1a1a1a;
+background-color: #fdfdfd;
+}
+body {
+margin: 0 auto;
+max-width: 36em;
+padding-left: 50px;
+padding-right: 50px;
+padding-top: 50px;
+padding-bottom: 50px;
+hyphens: auto;
+overflow-wrap: break-word;
+text-rendering: optimizeLegibility;
+font-kerning: normal;
+}
+@media (max-width: 600px) {
+body {
+font-size: 0.9em;
+padding: 12px;
+}
+h1 {
+font-size: 1.8em;
+}
+}
+@media print {
+html {
+background-color: white;
+}
+body {
+background-color: transparent;
+color: black;
+font-size: 12pt;
+}
+p, h2, h3 {
+orphans: 3;
+widows: 3;
+}
+h2, h3, h4 {
+page-break-after: avoid;
+}
+}
+p {
+margin: 1em 0;
+}
+a {
+color: #1a1a1a;
+}
+a:visited {
+color: #1a1a1a;
+}
+img {
+max-width: 100%;
+}
+svg {
+height: auto;
+max-width: 100%;
+}
+h1, h2, h3, h4, h5, h6 {
+margin-top: 1.4em;
+}
+h5, h6 {
+font-size: 1em;
+font-style: italic;
+}
+h6 {
+font-weight: normal;
+}
+ol, ul {
+padding-left: 1.7em;
+margin-top: 1em;
+}
+li > ol, li > ul {
+margin-top: 0;
+}
+blockquote {
+margin: 1em 0 1em 1.7em;
+padding-left: 1em;
+border-left: 2px solid #e6e6e6;
+color: #606060;
+}
+code {
+font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+font-size: 85%;
+margin: 0;
+hyphens: manual;
+}
+pre {
+margin: 1em 0;
+overflow: auto;
+}
+pre code {
+padding: 0;
+overflow: visible;
+overflow-wrap: normal;
+}
+.sourceCode {
+background-color: transparent;
+overflow: visible;
+}
+hr {
+border: none;
+border-top: 1px solid #1a1a1a;
+height: 1px;
+margin: 1em 0;
+}
+table {
+margin: 1em 0;
+border-collapse: collapse;
+width: 100%;
+overflow-x: auto;
+display: block;
+font-variant-numeric: lining-nums tabular-nums;
+}
+table caption {
+margin-bottom: 0.75em;
+}
+tbody {
+margin-top: 0.5em;
+border-top: 1px solid #1a1a1a;
+border-bottom: 1px solid #1a1a1a;
+}
+th {
+border-top: 1px solid #1a1a1a;
+padding: 0.25em 0.5em 0.25em 0.5em;
+}
+td {
+padding: 0.125em 0.5em 0.25em 0.5em;
+}
+header {
+margin-bottom: 4em;
+text-align: center;
+}
+#TOC li {
+list-style: none;
+}
+#TOC ul {
+padding-left: 1.3em;
+}
+#TOC > ul {
+padding-left: 0;
+}
+#TOC a:not(:hover) {
+text-decoration: none;
+}
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+</head>
+<body>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#legend-guardian-agent---system-architecture" id="toc-legend-guardian-agent---system-architecture">Legend Guardian
+Agent - System Architecture</a>
+<ul>
+<li><a href="#high-level-system-architecture" id="toc-high-level-system-architecture">🏗️ <strong>High-Level System
+Architecture</strong></a></li>
+<li><a href="#detailed-component-architecture" id="toc-detailed-component-architecture">🔌 <strong>Detailed Component
+Architecture</strong></a></li>
+<li><a href="#network-architecture-ports" id="toc-network-architecture-ports">🌐 <strong>Network Architecture
+&amp; Ports</strong></a></li>
+<li><a href="#authentication-security-architecture" id="toc-authentication-security-architecture">🔐 <strong>Authentication
+&amp; Security Architecture</strong></a></li>
+<li><a href="#data-flow-architecture" id="toc-data-flow-architecture">📊
+<strong>Data Flow Architecture</strong></a></li>
+<li><a href="#component-details" id="toc-component-details">🏷️
+<strong>Component Details</strong></a>
+<ul>
+<li><a href="#legend-guardian-agent" id="toc-legend-guardian-agent"><strong>Legend Guardian
+Agent</strong></a></li>
+<li><a href="#legend-engine" id="toc-legend-engine"><strong>Legend
+Engine</strong></a></li>
+<li><a href="#legend-sdlc" id="toc-legend-sdlc"><strong>Legend
+SDLC</strong></a></li>
+<li><a href="#legend-studio" id="toc-legend-studio"><strong>Legend
+Studio</strong></a></li>
+<li><a href="#mongodb" id="toc-mongodb"><strong>MongoDB</strong></a></li>
+<li><a href="#azure-ingress" id="toc-azure-ingress"><strong>Azure
+Ingress</strong></a></li>
+</ul></li>
+<li><a href="#deployment-architecture" id="toc-deployment-architecture">🔄 <strong>Deployment
+Architecture</strong></a></li>
+<li><a href="#configuration-summary" id="toc-configuration-summary">📋
+<strong>Configuration Summary</strong></a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="legend-guardian-agent---system-architecture">Legend Guardian
+Agent - System Architecture</h1>
+<h2 id="high-level-system-architecture">🏗️ <strong>High-Level System
+Architecture</strong></h2>
+<pre class="mermaid"><code>graph TB
+    subgraph &quot;External Systems&quot;
+        GITLAB[GitLab Repository&lt;br/&gt;OAuth Authentication]
+        AZURE[Azure AKS Cluster&lt;br/&gt;Production Environment]
+    end
+    
+    subgraph &quot;Legend Guardian Agent&quot;
+        API[FastAPI Server&lt;br/&gt;Port 8000]
+        AGENT[Guardian Agent Core&lt;br/&gt;Intelligence Engine]
+        MEMORY[Memory System&lt;br/&gt;Event History]
+        CLIENTS[Service Clients]
+    end
+    
+    subgraph &quot;FINOS Legend Platform&quot;
+        ENGINE[Legend Engine&lt;br/&gt;Port 6060]
+        SDLC[Legend SDLC&lt;br/&gt;Port 7070]
+        STUDIO[Legend Studio&lt;br/&gt;Port 9000]
+        MONGO[(MongoDB&lt;br/&gt;Port 27017)]
+    end
+    
+    subgraph &quot;Network &amp; Security&quot;
+        INGRESS[Azure Ingress&lt;br/&gt;HTTPS/443]
+        LOADBAL[Load Balancer&lt;br/&gt;Port 80/443]
+        FIREWALL[Network Security Groups]
+    end
+    
+    %% External connections
+    GITLAB --&gt;|OAuth Callback| INGRESS
+    AZURE --&gt;|Deployment| INGRESS
+    
+    %% Guardian Agent connections
+    API --&gt;|HTTP/8000| AGENT
+    AGENT --&gt;|Internal| MEMORY
+    AGENT --&gt;|HTTP Clients| CLIENTS
+    
+    %% Service connections
+    CLIENTS --&gt;|HTTP/6060| ENGINE
+    CLIENTS --&gt;|HTTP/7070| SDLC
+    CLIENTS --&gt;|HTTP/9000| STUDIO
+    
+    %% Database connections
+    ENGINE --&gt;|MongoDB| MONGO
+    SDLC --&gt;|MongoDB| MONGO
+    
+    %% Network flow
+    INGRESS --&gt;|HTTPS/443| LOADBAL
+    LOADBAL --&gt;|HTTP/80| API
+    LOADBAL --&gt;|HTTP/80| STUDIO
+    LOADBAL --&gt;|HTTP/80| ENGINE
+    LOADBAL --&gt;|HTTP/80| SDLC
+    
+    %% Security
+    FIREWALL --&gt;|Port Rules| INGRESS
+    FIREWALL --&gt;|Port Rules| LOADBAL</code></pre>
+<h2 id="detailed-component-architecture">🔌 <strong>Detailed Component
+Architecture</strong></h2>
+<pre class="mermaid"><code>graph LR
+    subgraph &quot;Client Layer&quot;
+        BROWSER[Web Browser&lt;br/&gt;Swagger UI]
+        CLI[Command Line&lt;br/&gt;curl/scripts]
+        APPS[External Apps&lt;br/&gt;API Integration]
+    end
+    
+    subgraph &quot;API Gateway Layer&quot;
+        FASTAPI[FastAPI Server&lt;br/&gt;Port 8000]
+        AUTH[Authentication&lt;br/&gt;Bearer Token]
+        CORS[CORS Middleware]
+        ROUTES[API Routes]
+    end
+    
+    subgraph &quot;Agent Core Layer&quot;
+        GUARDIAN[Guardian Agent&lt;br/&gt;Main Intelligence]
+        ANALYZER[Change Analyzer]
+        PLANNER[Action Planner]
+        EXECUTOR[Action Executor]
+    end
+    
+    subgraph &quot;Service Integration Layer&quot;
+        ENGINE_CLIENT[Engine Client&lt;br/&gt;HTTP/6060]
+        SDLC_CLIENT[SDLC Client&lt;br/&gt;HTTP/7070]
+        STUDIO_CLIENT[Studio Client&lt;br/&gt;HTTP/9000]
+    end
+    
+    subgraph &quot;Data Layer&quot;
+        MEMORY[Memory System&lt;br/&gt;Event Store]
+        CONFIG[Configuration&lt;br/&gt;Environment]
+        LOGS[Logging System]
+    end
+    
+    subgraph &quot;External Services&quot;
+        LEGEND_ENGINE[Legend Engine&lt;br/&gt;Port 6060]
+        LEGEND_SDLC[Legend SDLC&lt;br/&gt;Port 7070]
+        LEGEND_STUDIO[Legend Studio&lt;br/&gt;Port 9000]
+        MONGODB[(MongoDB&lt;br/&gt;Port 27017)]
+    end
+    
+    %% Client connections
+    BROWSER --&gt;|HTTP/8000| FASTAPI
+    CLI --&gt;|HTTP/8000| FASTAPI
+    APPS --&gt;|HTTP/8000| FASTAPI
+    
+    %% API Layer connections
+    FASTAPI --&gt;|Internal| AUTH
+    FASTAPI --&gt;|Internal| CORS
+    FASTAPI --&gt;|Internal| ROUTES
+    
+    %% Agent connections
+    ROUTES --&gt;|Internal| GUARDIAN
+    GUARDIAN --&gt;|Internal| ANALYZER
+    GUARDIAN --&gt;|Internal| PLANNER
+    GUARDIAN --&gt;|Internal| EXECUTOR
+    
+    %% Service connections
+    GUARDIAN --&gt;|Internal| ENGINE_CLIENT
+    GUARDIAN --&gt;|Internal| SDLC_CLIENT
+    GUARDIAN --&gt;|Internal| STUDIO_CLIENT
+    
+    %% External service calls
+    ENGINE_CLIENT --&gt;|HTTP/6060| LEGEND_ENGINE
+    SDLC_CLIENT --&gt;|HTTP/7070| LEGEND_SDLC
+    STUDIO_CLIENT --&gt;|HTTP/9000| LEGEND_STUDIO
+    
+    %% Data connections
+    GUARDIAN --&gt;|Internal| MEMORY
+    GUARDIAN --&gt;|Internal| CONFIG
+    GUARDIAN --&gt;|Internal| LOGS
+    
+    %% Database connections
+    LEGEND_ENGINE --&gt;|MongoDB| MONGODB
+    LEGEND_SDLC --&gt;|MongoDB| MONGODB</code></pre>
+<h2 id="network-architecture-ports">🌐 <strong>Network Architecture
+&amp; Ports</strong></h2>
+<pre class="mermaid"><code>graph TB
+    subgraph &quot;Internet&quot;
+        USERS[External Users&lt;br/&gt;Developers/Admins]
+        GITLAB[GitLab OAuth&lt;br/&gt;Port 443]
+    end
+    
+    subgraph &quot;Azure AKS Cluster&quot;
+        subgraph &quot;Public Ingress&quot;
+            INGRESS[Azure Ingress Controller&lt;br/&gt;Port 80/443]
+        end
+        
+        subgraph &quot;Legend Guardian Agent Namespace&quot;
+            GUARDIAN_POD[Guardian Agent Pod&lt;br/&gt;Port 8000]
+            GUARDIAN_SVC[Guardian Agent Service&lt;br/&gt;Port 8000]
+        end
+        
+        subgraph &quot;Legend Platform Namespace&quot;
+            STUDIO_POD[Legend Studio Pod&lt;br/&gt;Port 9000]
+            STUDIO_SVC[Legend Studio Service&lt;br/&gt;Port 9000]
+            
+            ENGINE_POD[Legend Engine Pod&lt;br/&gt;Port 6060]
+            ENGINE_SVC[Legend Engine Service&lt;br/&gt;Port 6060]
+            
+            SDLC_POD[Legend SDLC Pod&lt;br/&gt;Port 7070]
+            SDLC_SVC[Legend SDLC Service&lt;br/&gt;Port 7070]
+        end
+        
+        subgraph &quot;Database Namespace&quot;
+            MONGO_POD[MongoDB Pod&lt;br/&gt;Port 27017]
+            MONGO_SVC[MongoDB Service&lt;br/&gt;Port 27017]
+        end
+    end
+    
+    %% External connections
+    USERS --&gt;|HTTPS/443| INGRESS
+    GITLAB --&gt;|OAuth/443| INGRESS
+    
+    %% Ingress routing
+    INGRESS --&gt;|HTTP/8000| GUARDIAN_SVC
+    INGRESS --&gt;|HTTP/9000| STUDIO_SVC
+    INGRESS --&gt;|HTTP/6060| ENGINE_SVC
+    INGRESS --&gt;|HTTP/7070| SDLC_SVC
+    
+    %% Service to Pod routing
+    GUARDIAN_SVC --&gt;|Internal| GUARDIAN_POD
+    STUDIO_SVC --&gt;|Internal| STUDIO_POD
+    ENGINE_SVC --&gt;|Internal| ENGINE_POD
+    SDLC_SVC --&gt;|Internal| SDLC_POD
+    
+    %% Internal service communication
+    GUARDIAN_POD --&gt;|HTTP/6060| ENGINE_POD
+    GUARDIAN_POD --&gt;|HTTP/7070| SDLC_POD
+    GUARDIAN_POD --&gt;|HTTP/9000| STUDIO_POD
+    
+    %% Database connections
+    ENGINE_POD --&gt;|MongoDB/27017| MONGO_POD
+    SDLC_POD --&gt;|MongoDB/27017| MONGO_POD</code></pre>
+<h2 id="authentication-security-architecture">🔐 <strong>Authentication
+&amp; Security Architecture</strong></h2>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Client
+    participant FastAPI
+    participant Auth
+    participant Guardian
+    participant Legend
+    
+    Note over Client,Legend: Authentication Flow
+    
+    Client-&gt;&gt;FastAPI: POST /api/v1/model/change&lt;br/&gt;Authorization: Bearer {api_key}
+    FastAPI-&gt;&gt;Auth: Verify API Key
+    Auth-&gt;&gt;Auth: Check VALID_API_KEYS
+    Auth--&gt;&gt;FastAPI: Valid/Invalid
+    
+    alt Valid API Key
+        FastAPI-&gt;&gt;Guardian: Process Request
+        Guardian-&gt;&gt;Legend: HTTP Request&lt;br/&gt;LEGEND_API_KEY
+        Legend--&gt;&gt;Guardian: Response
+        Guardian--&gt;&gt;FastAPI: Result
+        FastAPI--&gt;&gt;Client: Success Response
+    else Invalid API Key
+        FastAPI--&gt;&gt;Client: 401 Unauthorized
+    end</code></pre>
+<h2 id="data-flow-architecture">📊 <strong>Data Flow
+Architecture</strong></h2>
+<pre class="mermaid"><code>flowchart TD
+    subgraph &quot;Event Sources&quot;
+        GITLAB[GitLab Webhooks]
+        MANUAL[Manual API Calls]
+        SCHEDULED[Scheduled Checks]
+    end
+    
+    subgraph &quot;Guardian Agent Processing&quot;
+        RECEIVE[Event Reception]
+        ANALYZE[Change Analysis]
+        PLAN[Action Planning]
+        EXECUTE[Action Execution]
+        STORE[Memory Storage]
+    end
+    
+    subgraph &quot;Legend Platform Actions&quot;
+        VALIDATE[Model Validation]
+        GENERATE[Service Generation]
+        TEST[Test Execution]
+        DEPLOY[Deployment]
+    end
+    
+    subgraph &quot;Output &amp; Monitoring&quot;
+        LOGS[Logging]
+        METRICS[Metrics]
+        ALERTS[Alerts]
+        REPORTS[Reports]
+    end
+    
+    %% Data flow
+    GITLAB --&gt; RECEIVE
+    MANUAL --&gt; RECEIVE
+    SCHEDULED --&gt; RECEIVE
+    
+    RECEIVE --&gt; ANALYZE
+    ANALYZE --&gt; PLAN
+    PLAN --&gt; EXECUTE
+    EXECUTE --&gt; STORE
+    
+    EXECUTE --&gt; VALIDATE
+    EXECUTE --&gt; GENERATE
+    EXECUTE --&gt; TEST
+    EXECUTE --&gt; DEPLOY
+    
+    EXECUTE --&gt; LOGS
+    EXECUTE --&gt; METRICS
+    EXECUTE --&gt; ALERTS
+    EXECUTE --&gt; REPORTS</code></pre>
+<h2 id="component-details">🏷️ <strong>Component Details</strong></h2>
+<h3 id="legend-guardian-agent"><strong>Legend Guardian
+Agent</strong></h3>
+<ul>
+<li><strong>Port</strong>: 8000</li>
+<li><strong>Protocol</strong>: HTTP/HTTPS</li>
+<li><strong>Framework</strong>: FastAPI (Python)</li>
+<li><strong>Authentication</strong>: Bearer Token (API Keys)</li>
+<li><strong>Features</strong>: Model monitoring, validation,
+automation</li>
+</ul>
+<h3 id="legend-engine"><strong>Legend Engine</strong></h3>
+<ul>
+<li><strong>Port</strong>: 6060</li>
+<li><strong>Protocol</strong>: HTTP</li>
+<li><strong>Purpose</strong>: Model execution and validation</li>
+<li><strong>Database</strong>: MongoDB (Port 27017)</li>
+</ul>
+<h3 id="legend-sdlc"><strong>Legend SDLC</strong></h3>
+<ul>
+<li><strong>Port</strong>: 7070</li>
+<li><strong>Protocol</strong>: HTTP</li>
+<li><strong>Purpose</strong>: Source control and lifecycle
+management</li>
+<li><strong>Database</strong>: MongoDB (Port 27017)</li>
+</ul>
+<h3 id="legend-studio"><strong>Legend Studio</strong></h3>
+<ul>
+<li><strong>Port</strong>: 9000</li>
+<li><strong>Protocol</strong>: HTTP</li>
+<li><strong>Purpose</strong>: Web-based modeling interface</li>
+<li><strong>Authentication</strong>: GitLab OAuth</li>
+</ul>
+<h3 id="mongodb"><strong>MongoDB</strong></h3>
+<ul>
+<li><strong>Port</strong>: 27017</li>
+<li><strong>Protocol</strong>: MongoDB Wire Protocol</li>
+<li><strong>Purpose</strong>: Data persistence for all Legend
+services</li>
+</ul>
+<h3 id="azure-ingress"><strong>Azure Ingress</strong></h3>
+<ul>
+<li><strong>Ports</strong>: 80 (HTTP), 443 (HTTPS)</li>
+<li><strong>Protocol</strong>: HTTP/HTTPS</li>
+<li><strong>Purpose</strong>: External access and load balancing</li>
+</ul>
+<h2 id="deployment-architecture">🔄 <strong>Deployment
+Architecture</strong></h2>
+<pre class="mermaid"><code>graph LR
+    subgraph &quot;Development&quot;
+        DEV_API[Local API&lt;br/&gt;localhost:8000]
+        DEV_ENGINE[Local Engine&lt;br/&gt;localhost:6060]
+        DEV_SDLC[Local SDLC&lt;br/&gt;localhost:7070]
+    end
+    
+    subgraph &quot;Production (Azure AKS)&quot;
+        PROD_API[Azure API&lt;br/&gt;legend-guardian.azure-legend.com:8000]
+        PROD_ENGINE[Azure Engine&lt;br/&gt;legend-engine.azure-legend.com:6060]
+        PROD_SDLC[Azure SDLC&lt;br/&gt;legend-sdlc.azure-legend.com:7070]
+        PROD_STUDIO[Azure Studio&lt;br/&gt;legend-studio.azure-legend.com:9000]
+    end
+    
+    DEV_API --&gt; DEV_ENGINE
+    DEV_API --&gt; DEV_SDLC
+    
+    PROD_API --&gt; PROD_ENGINE
+    PROD_API --&gt; PROD_SDLC
+    PROD_API --&gt; PROD_STUDIO</code></pre>
+<h2 id="configuration-summary">📋 <strong>Configuration
+Summary</strong></h2>
+<table>
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 11%" />
+<col style="width: 19%" />
+<col style="width: 17%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Component</th>
+<th>Port</th>
+<th>Protocol</th>
+<th>Purpose</th>
+<th>Authentication</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Guardian Agent</strong></td>
+<td>8000</td>
+<td>HTTP</td>
+<td>API Server</td>
+<td>API Key (Bearer)</td>
+</tr>
+<tr>
+<td><strong>Legend Engine</strong></td>
+<td>6060</td>
+<td>HTTP</td>
+<td>Model Execution</td>
+<td>Internal</td>
+</tr>
+<tr>
+<td><strong>Legend SDLC</strong></td>
+<td>7070</td>
+<td>HTTP</td>
+<td>Source Control</td>
+<td>GitLab OAuth</td>
+</tr>
+<tr>
+<td><strong>Legend Studio</strong></td>
+<td>9000</td>
+<td>HTTP</td>
+<td>Web Interface</td>
+<td>GitLab OAuth</td>
+</tr>
+<tr>
+<td><strong>MongoDB</strong></td>
+<td>27017</td>
+<td>MongoDB</td>
+<td>Data Storage</td>
+<td>Internal</td>
+</tr>
+<tr>
+<td><strong>Azure Ingress</strong></td>
+<td>80/443</td>
+<td>HTTP/HTTPS</td>
+<td>External Access</td>
+<td>Load Balancer</td>
+</tr>
+</tbody>
+</table>
+<p>This architecture provides a scalable, secure, and maintainable
+system for monitoring and managing the FINOS Legend platform through the
+Legend Guardian Agent.</p>
+</body>
+</html>
