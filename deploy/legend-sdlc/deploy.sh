@@ -8,53 +8,28 @@ set -e
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Load common variables
-source "$SCRIPT_DIR/../common.env"
+# Source common functions library
+source "$SCRIPT_DIR/../lib/common-functions.sh"
 
-# Load secrets if available (from parent directory)
-if [ -f "$SCRIPT_DIR/../../secrets.env" ]; then
-    print_status "Loading secrets from secrets.env..."
-    source "$SCRIPT_DIR/../../secrets.env"
-elif [ -f "$SCRIPT_DIR/../../.env.local" ]; then
-    print_status "Loading secrets from .env.local..."
-    source "$SCRIPT_DIR/../../.env.local"
-else
-    print_warning "No secrets file found. Using placeholder values from common.env"
+# Determine deployment environment (default to local)
+DEPLOYMENT_ENV="${DEPLOYMENT_ENV:-local}"
+
+# Load all configuration (base -> environment-specific -> secrets)
+load_all_config "$DEPLOYMENT_ENV"
+
+# Load SDLC-specific overrides if they exist
+if [ -f "$SCRIPT_DIR/sdlc.env" ]; then
+    source "$SCRIPT_DIR/sdlc.env"
 fi
-
-# Load SDLC-specific variables
-source "$SCRIPT_DIR/sdlc.env"
-
-# Colors for output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m'
-
-print_status() { echo -e "${GREEN}[INFO]${NC} $1"; }
-print_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
-print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 
 # Function to deploy Legend SDLC
 deploy_sdlc() {
     print_status "Deploying Legend SDLC..."
     
-    # Check if namespace exists
-    if ! kubectl get namespace $K8S_NAMESPACE &>/dev/null; then
-        print_status "Creating namespace $K8S_NAMESPACE..."
-        kubectl create namespace $K8S_NAMESPACE
-    fi
+    # Create namespace if it doesn't exist
+    create_namespace
     
-    # Create GitLab OAuth secret
-    print_status "Creating GitLab OAuth secret..."
-    kubectl create secret generic gitlab-oauth \
-        --from-literal=app-id="$GITLAB_APP_ID" \
-        --from-literal=app-secret="$GITLAB_APP_SECRET" \
-        -n $K8S_NAMESPACE \
-        --dry-run=client -o yaml | kubectl apply -f -
-    
-    # Apply ConfigMap
+    # Apply ConfigMap if exists
     if [ -f "$SCRIPT_DIR/config/sdlc-config.yml" ]; then
         print_status "Creating ConfigMap..."
         kubectl create configmap legend-sdlc-config \
@@ -73,9 +48,7 @@ deploy_sdlc() {
     fi
     
     # Wait for deployment
-    print_status "Waiting for Legend SDLC to be ready..."
-    kubectl wait --for=condition=available --timeout=300s \
-        deployment/legend-sdlc -n $K8S_NAMESPACE || true
+    wait_for_deployment "legend-sdlc" "$K8S_NAMESPACE" 300
     
     print_success "Legend SDLC deployed successfully!"
 }
@@ -85,12 +58,10 @@ validate_sdlc() {
     print_status "Validating Legend SDLC deployment..."
     
     # Check pod status
-    POD_STATUS=$(kubectl get pods -n $K8S_NAMESPACE -l app=legend-sdlc -o jsonpath='{.items[0].status.phase}' 2>/dev/null || echo "Not Found")
-    
-    if [ "$POD_STATUS" = "Running" ]; then
+    if check_pod_status "legend-sdlc" "$K8S_NAMESPACE"; then
         print_success "Legend SDLC pod is running"
     else
-        print_error "Legend SDLC pod status: $POD_STATUS"
+        print_error "Legend SDLC pod is not running properly"
         return 1
     fi
     
@@ -104,33 +75,36 @@ validate_sdlc() {
         return 1
     fi
     
-    # Port forward for testing
-    print_status "Setting up port-forward for testing..."
-    kubectl port-forward -n $K8S_NAMESPACE svc/legend-sdlc 6100:6100 &
-    PF_PID=$!
-    sleep 5
-    
-    # Test health endpoint
-    if curl -f http://localhost:6100/api/info &>/dev/null 2>&1; then
-        print_success "Legend SDLC health check passed"
-    else
-        print_warning "Legend SDLC health check failed (may need more time to start)"
+    # Port forward for testing (if running locally)
+    if [ "$DEPLOYMENT_ENV" = "local" ]; then
+        print_status "Setting up port-forward for testing..."
+        kubectl port-forward -n $K8S_NAMESPACE svc/legend-sdlc 6100:6100 &
+        PF_PID=$!
+        sleep 5
+        
+        # Test health endpoint
+        if curl -f http://localhost:6100/api/info &>/dev/null 2>&1; then
+            print_success "Legend SDLC health check passed"
+        else
+            print_warning "Legend SDLC health check failed (may need more time to start)"
+        fi
+        
+        # Clean up port-forward
+        kill $PF_PID 2>/dev/null || true
     fi
     
-    # Clean up port-forward
-    kill $PF_PID 2>/dev/null || true
-    
     print_success "Validation complete!"
+    return 0
 }
 
 # Function to show status
 show_status() {
-    print_status "Legend SDLC Status:"
+    print_section "Legend SDLC Status"
     echo ""
     kubectl get deployment,pod,svc -n $K8S_NAMESPACE -l app=legend-sdlc
     echo ""
     
-    # Show logs tail
+    # Show recent logs
     print_status "Recent logs:"
     kubectl logs -n $K8S_NAMESPACE -l app=legend-sdlc --tail=20 2>/dev/null || echo "No logs available"
 }
@@ -141,19 +115,33 @@ cleanup() {
     kubectl delete deployment legend-sdlc -n $K8S_NAMESPACE --ignore-not-found=true
     kubectl delete service legend-sdlc -n $K8S_NAMESPACE --ignore-not-found=true
     kubectl delete configmap legend-sdlc-config -n $K8S_NAMESPACE --ignore-not-found=true
-    kubectl delete secret gitlab-oauth -n $K8S_NAMESPACE --ignore-not-found=true
     print_success "Legend SDLC removed"
+}
+
+# Show configuration
+show_config() {
+    print_section "Legend SDLC Configuration"
+    echo "Environment: $DEPLOYMENT_ENV"
+    echo "Namespace: $K8S_NAMESPACE"
+    echo "Version: $LEGEND_SDLC_VERSION"
+    echo "Port: $LEGEND_SDLC_PORT"
+    echo "Memory Limit: $SDLC_MEMORY_LIMIT"
+    echo "CPU Limit: $SDLC_CPU_LIMIT"
+    echo "Replicas: $SDLC_REPLICAS"
+    echo "Java Options: $SDLC_JAVA_OPTS"
+    echo "GitLab Host: $GITLAB_HOST"
+    echo "GitLab App ID: ${GITLAB_APP_ID:0:10}..." # Show only first 10 chars for security
 }
 
 # Main execution
 main() {
-    echo "========================================="
-    echo "      Legend SDLC Deployment"
-    echo "========================================="
+    print_section "Legend SDLC Deployment"
     echo ""
     
     case "${1:-deploy}" in
         deploy)
+            show_config
+            echo ""
             deploy_sdlc
             validate_sdlc
             show_status
@@ -167,12 +155,16 @@ main() {
         clean|cleanup)
             cleanup
             ;;
+        config)
+            show_config
+            ;;
         *)
-            echo "Usage: $0 [deploy|validate|status|clean]"
+            echo "Usage: $0 [deploy|validate|status|clean|config]"
             echo "  deploy   - Deploy Legend SDLC (default)"
             echo "  validate - Validate deployment"
             echo "  status   - Show current status"
             echo "  clean    - Remove deployment"
+            echo "  config   - Show configuration"
             exit 1
             ;;
     esac

@@ -5,66 +5,48 @@
 
 set -e
 
-# Colors for output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m'
+# Script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-print_status() { echo -e "${GREEN}[INFO]${NC} $1"; }
-print_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
-print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+# Source common functions library
+source "$SCRIPT_DIR/../lib/common-functions.sh"
 
-# Check prerequisites
-check_prerequisites() {
-    print_status "Checking prerequisites..."
+# Load all configuration for local deployment
+load_all_config "local"
+
+# Check local prerequisites
+check_local_prerequisites() {
+    print_section "Checking Local Prerequisites"
     
-    # Check Docker
-    if ! docker info &> /dev/null; then
-        print_error "Docker is not running. Please start Docker Desktop."
-        exit 1
+    # Use common function to check Docker prerequisites
+    check_prerequisites "local"
+    
+    # Check for local .env file (for docker-compose)
+    if [ ! -f "$SCRIPT_DIR/.env" ]; then
+        if [ -f "$SCRIPT_DIR/.env.example" ]; then
+            print_warning ".env file not found. Creating from template..."
+            cp "$SCRIPT_DIR/.env.example" "$SCRIPT_DIR/.env"
+            print_status "Please edit .env file with your GitLab OAuth credentials (optional)"
+        fi
     fi
-    
-    # Check Docker Compose
-    if ! docker-compose version &> /dev/null; then
-        print_error "Docker Compose is not installed."
-        exit 1
-    fi
-    
-    # Check for .env file
-if [ ! -f .env ]; then
-    print_warning ".env file not found. Creating from template..."
-    cp .env.example .env
-    print_status "Please edit .env file with your GitLab OAuth credentials (optional)"
-fi
-
-# Load secrets if available (from parent directory)
-if [ -f "../secrets.env" ]; then
-    print_status "Loading secrets from secrets.env..."
-    source "../secrets.env"
-elif [ -f "../.env.local" ]; then
-    print_status "Loading secrets from .env.local..."
-    source "../.env.local"
-else
-    print_warning "No secrets file found. Using default values"
-fi
     
     # Check port availability
-    for port in 6100 6300 9000 27017; do
-        if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
-            print_warning "Port $port is already in use"
-        fi
-    done
+    local ports=("$LEGEND_ENGINE_PORT" "$LEGEND_SDLC_PORT" "$LEGEND_STUDIO_PORT" "$MONGODB_PORT")
+    if ! check_ports_available "${ports[@]}"; then
+        print_warning "Some ports are in use. Services may already be running."
+    fi
     
     print_success "Prerequisites check completed"
 }
 
 # Start services
 start_services() {
-    print_status "Starting Legend services..."
+    local profile="${1:-all}"
+    print_status "Starting Legend services (profile: $profile)..."
     
-    case "${1:-all}" in
+    cd "$SCRIPT_DIR"
+    
+    case "$profile" in
         all)
             print_status "Starting all services (including Guardian Agent)..."
             docker-compose --profile guardian up -d
@@ -78,11 +60,19 @@ start_services() {
             docker-compose --profile guardian up -d legend-guardian
             ;;
         *)
-            print_error "Unknown option: $1"
+            print_error "Unknown profile: $profile"
             echo "Usage: $0 [all|core|guardian]"
             exit 1
             ;;
     esac
+}
+
+# Stop services
+stop_services() {
+    print_status "Stopping Legend services..."
+    cd "$SCRIPT_DIR"
+    docker-compose down
+    print_success "Services stopped"
 }
 
 # Wait for services to be healthy
@@ -91,46 +81,91 @@ wait_for_services() {
     
     # Wait for MongoDB
     print_status "Waiting for MongoDB..."
-    until docker exec legend-mongodb mongosh --quiet --eval "db.adminCommand('ping')" &>/dev/null; do
+    local mongo_ready=false
+    for i in {1..30}; do
+        if docker exec legend-mongodb mongosh --quiet --eval "db.adminCommand('ping')" &>/dev/null; then
+            mongo_ready=true
+            break
+        fi
         sleep 2
     done
-    print_success "MongoDB is ready"
+    
+    if [ "$mongo_ready" = true ]; then
+        print_success "MongoDB is ready"
+    else
+        print_warning "MongoDB may not be fully ready"
+    fi
     
     # Wait for Legend Engine
     print_status "Waiting for Legend Engine..."
-    until curl -f http://localhost:6300/api/server/v1/info &>/dev/null 2>&1; do
+    local engine_ready=false
+    for i in {1..30}; do
+        if curl -f http://localhost:$LEGEND_ENGINE_PORT/api/server/v1/info &>/dev/null 2>&1; then
+            engine_ready=true
+            break
+        fi
         sleep 2
     done
-    print_success "Legend Engine is ready"
+    
+    if [ "$engine_ready" = true ]; then
+        print_success "Legend Engine is ready"
+    else
+        print_warning "Legend Engine may not be fully ready"
+    fi
     
     # Wait for Legend SDLC
     print_status "Waiting for Legend SDLC..."
-    until curl -f http://localhost:6100/api/info &>/dev/null 2>&1; do
+    local sdlc_ready=false
+    for i in {1..30}; do
+        if curl -f http://localhost:$LEGEND_SDLC_PORT/api/info &>/dev/null 2>&1; then
+            sdlc_ready=true
+            break
+        fi
         sleep 2
     done
-    print_success "Legend SDLC is ready"
+    
+    if [ "$sdlc_ready" = true ]; then
+        print_success "Legend SDLC is ready"
+    else
+        print_warning "Legend SDLC may not be fully ready"
+    fi
     
     # Wait for Legend Studio
     print_status "Waiting for Legend Studio..."
-    until curl -f http://localhost:9000 &>/dev/null 2>&1; do
+    local studio_ready=false
+    for i in {1..30}; do
+        if curl -f http://localhost:$LEGEND_STUDIO_PORT &>/dev/null 2>&1; then
+            studio_ready=true
+            break
+        fi
         sleep 2
     done
-    print_success "Legend Studio is ready"
+    
+    if [ "$studio_ready" = true ]; then
+        print_success "Legend Studio is ready"
+    else
+        print_warning "Legend Studio may not be fully ready"
+    fi
 }
 
 # Show status
 show_status() {
+    print_section "Legend Platform Status"
+    
+    cd "$SCRIPT_DIR"
+    docker-compose ps
+    
     echo ""
     print_success "Legend Platform is running!"
     echo ""
     echo "Access the services at:"
-    echo "  📊 Legend Studio: http://localhost:9000"
-    echo "  ⚙️  Legend Engine: http://localhost:6300"
-    echo "  🔧 Legend SDLC: http://localhost:6100"
-    echo "  💾 MongoDB: mongodb://localhost:27017"
+    echo "  📊 Legend Studio: $LEGEND_STUDIO_URL"
+    echo "  ⚙️  Legend Engine: $LEGEND_ENGINE_URL"
+    echo "  🔧 Legend SDLC: $LEGEND_SDLC_URL"
+    echo "  💾 MongoDB: mongodb://localhost:$MONGODB_PORT"
     
     if docker ps | grep -q legend-guardian; then
-        echo "  🤖 Guardian Agent: http://localhost:8000"
+        echo "  🤖 Guardian Agent: http://localhost:$LEGEND_API_PORT"
     fi
     
     echo ""
@@ -138,20 +173,89 @@ show_status() {
     echo "  docker-compose logs -f [service-name]"
     echo ""
     echo "To stop services:"
-    echo "  docker-compose down"
+    echo "  $0 stop"
+}
+
+# Show configuration
+show_config() {
+    print_section "Local Configuration"
+    echo "Environment: $DEPLOYMENT_ENV"
+    echo "MongoDB URI: $MONGODB_URI"
+    echo "Legend Engine URL: $LEGEND_ENGINE_URL"
+    echo "Legend SDLC URL: $LEGEND_SDLC_URL"
+    echo "Legend Studio URL: $LEGEND_STUDIO_URL"
+    echo "Guardian API Key: $LEGEND_API_KEY"
+    echo "Engine Memory Limit: $ENGINE_MEMORY_LIMIT"
+    echo "Java Options: $ENGINE_JAVA_OPTS"
+}
+
+# View logs
+view_logs() {
+    local service="${1:-}"
+    
+    cd "$SCRIPT_DIR"
+    
+    if [ -z "$service" ]; then
+        print_status "Following logs for all services..."
+        docker-compose logs -f
+    else
+        print_status "Following logs for $service..."
+        docker-compose logs -f "$service"
+    fi
 }
 
 # Main execution
 main() {
-    echo "========================================="
-    echo "  Legend Local Development Environment"
-    echo "========================================="
-    echo ""
-    
-    check_prerequisites
-    start_services "$1"
-    wait_for_services
-    show_status
+    case "${1:-start}" in
+        start)
+            print_section "Legend Local Development Environment"
+            echo ""
+            check_local_prerequisites
+            start_services "${2:-all}"
+            wait_for_services
+            show_status
+            ;;
+        stop)
+            stop_services
+            ;;
+        restart)
+            stop_services
+            sleep 2
+            start_services "${2:-all}"
+            wait_for_services
+            show_status
+            ;;
+        status)
+            show_status
+            ;;
+        logs)
+            view_logs "$2"
+            ;;
+        config)
+            show_config
+            ;;
+        validate)
+            "$SCRIPT_DIR/../validate-config.sh" local
+            ;;
+        *)
+            echo "Usage: $0 [start|stop|restart|status|logs|config|validate] [profile|service]"
+            echo ""
+            echo "Commands:"
+            echo "  start [all|core|guardian] - Start services (default: all)"
+            echo "  stop                      - Stop all services"
+            echo "  restart [all|core|guardian] - Restart services"
+            echo "  status                    - Show service status"
+            echo "  logs [service]           - View logs (all services if none specified)"
+            echo "  config                   - Show configuration"
+            echo "  validate                 - Validate configuration"
+            echo ""
+            echo "Profiles:"
+            echo "  all      - All services including Guardian Agent"
+            echo "  core     - Only core Legend services"
+            echo "  guardian - Only Guardian Agent"
+            exit 1
+            ;;
+    esac
 }
 
 main "$@"

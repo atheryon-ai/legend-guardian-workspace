@@ -8,75 +8,14 @@ set -e
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Colors for output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+# Source common functions library
+source "$SCRIPT_DIR/lib/common-functions.sh"
 
-print_status() { echo -e "${GREEN}[INFO]${NC} $1"; }
-print_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
-print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
-print_section() { echo -e "${BLUE}========== $1 ==========${NC}"; }
+# Determine deployment environment (default to local for K8s deployments)
+DEPLOYMENT_ENV="${DEPLOYMENT_ENV:-local}"
 
-# Load common variables
-source "$SCRIPT_DIR/common.env"
-
-# Load secrets if available (from parent directory)
-if [ -f "$SCRIPT_DIR/../secrets.env" ]; then
-    print_status "Loading secrets from secrets.env..."
-    source "$SCRIPT_DIR/../secrets.env"
-elif [ -f "$SCRIPT_DIR/../.env.local" ]; then
-    print_status "Loading secrets from .env.local..."
-    source "$SCRIPT_DIR/../.env.local"
-else
-    print_warning "No secrets file found. Using placeholder values from common.env"
-fi
-
-# Function to check prerequisites
-check_prerequisites() {
-    print_section "Checking Prerequisites"
-    
-    # Check kubectl
-    if ! command -v kubectl &> /dev/null; then
-        print_error "kubectl not installed"
-        exit 1
-    fi
-    
-    # Check cluster connection
-    if ! kubectl cluster-info &> /dev/null; then
-        print_error "Not connected to Kubernetes cluster"
-        exit 1
-    fi
-    
-    # Check envsubst
-    if ! command -v envsubst &> /dev/null; then
-        print_warning "envsubst not found. Installing..."
-        # Install envsubst based on OS
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            brew install gettext
-            brew link --force gettext
-        else
-            apt-get update && apt-get install -y gettext-base
-        fi
-    fi
-    
-    print_success "Prerequisites check passed"
-}
-
-# Function to create namespace
-create_namespace() {
-    print_section "Setting up Namespace"
-    
-    if ! kubectl get namespace $K8S_NAMESPACE &>/dev/null; then
-        print_status "Creating namespace $K8S_NAMESPACE..."
-        kubectl create namespace $K8S_NAMESPACE
-    else
-        print_status "Namespace $K8S_NAMESPACE already exists"
-    fi
-}
+# Load all configuration (base -> environment-specific -> secrets)
+load_all_config "$DEPLOYMENT_ENV"
 
 # Function to deploy a service
 deploy_service() {
@@ -222,12 +161,16 @@ show_menu() {
     echo "   Legend Platform Deployment Manager"
     echo "========================================="
     echo ""
+    echo "Environment: $DEPLOYMENT_ENV"
+    echo "Namespace: $K8S_NAMESPACE"
+    echo ""
     echo "1) Deploy all services"
     echo "2) Deploy specific service"
     echo "3) Validate all services"
     echo "4) Show status"
     echo "5) Clean up all"
-    echo "6) Exit"
+    echo "6) Validate configuration"
+    echo "7) Exit"
     echo ""
 }
 
@@ -239,7 +182,7 @@ interactive_mode() {
         
         case $choice in
             1)
-                check_prerequisites
+                check_prerequisites "k8s"
                 create_namespace
                 deploy_all
                 validate_all
@@ -253,7 +196,7 @@ interactive_mode() {
                 echo "  - legend-studio"
                 echo "  - legend-guardian"
                 read -p "Enter service name: " service
-                check_prerequisites
+                check_prerequisites "k8s"
                 create_namespace
                 deploy_service "$service"
                 ;;
@@ -267,6 +210,9 @@ interactive_mode() {
                 cleanup_all
                 ;;
             6)
+                "$SCRIPT_DIR/validate-config.sh" "$DEPLOYMENT_ENV"
+                ;;
+            7)
                 echo "Goodbye!"
                 exit 0
                 ;;
@@ -284,7 +230,7 @@ interactive_mode() {
 main() {
     case "${1:-menu}" in
         deploy)
-            check_prerequisites
+            check_prerequisites "k8s"
             create_namespace
             deploy_all
             validate_all
@@ -299,16 +245,22 @@ main() {
         clean|cleanup)
             cleanup_all
             ;;
+        config)
+            "$SCRIPT_DIR/validate-config.sh" "$DEPLOYMENT_ENV"
+            ;;
         menu|interactive)
             interactive_mode
             ;;
         *)
-            echo "Usage: $0 [deploy|validate|status|clean|menu]"
+            echo "Usage: $0 [deploy|validate|status|clean|config|menu]"
             echo "  deploy   - Deploy all services"
             echo "  validate - Validate all deployments"
             echo "  status   - Show current status"
             echo "  clean    - Remove all deployments"
+            echo "  config   - Validate configuration"
             echo "  menu     - Interactive menu (default)"
+            echo ""
+            echo "Environment: DEPLOYMENT_ENV=$DEPLOYMENT_ENV"
             exit 1
             ;;
     esac

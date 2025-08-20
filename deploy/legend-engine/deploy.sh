@@ -8,45 +8,28 @@ set -e
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Colors for output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m'
+# Source common functions library
+source "$SCRIPT_DIR/../lib/common-functions.sh"
 
-print_status() { echo -e "${GREEN}[INFO]${NC} $1"; }
-print_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
-print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+# Determine deployment environment (default to local)
+DEPLOYMENT_ENV="${DEPLOYMENT_ENV:-local}"
 
-# Load common variables
-source "$SCRIPT_DIR/../common.env"
+# Load all configuration (base -> environment-specific -> secrets)
+load_all_config "$DEPLOYMENT_ENV"
 
-# Load secrets if available (from parent directory)
-if [ -f "$SCRIPT_DIR/../../secrets.env" ]; then
-    print_status "Loading secrets from secrets.env..."
-    source "$SCRIPT_DIR/../../secrets.env"
-elif [ -f "$SCRIPT_DIR/../../.env.local" ]; then
-    print_status "Loading secrets from .env.local..."
-    source "$SCRIPT_DIR/../../.env.local"
-else
-    print_warning "No secrets file found. Using placeholder values from common.env"
+# Load engine-specific overrides if they exist
+if [ -f "$SCRIPT_DIR/engine.env" ]; then
+    source "$SCRIPT_DIR/engine.env"
 fi
-
-# Load engine-specific variables
-source "$SCRIPT_DIR/engine.env"
 
 # Function to deploy Legend Engine
 deploy_engine() {
     print_status "Deploying Legend Engine..."
     
-    # Check if namespace exists
-    if ! kubectl get namespace $K8S_NAMESPACE &>/dev/null; then
-        print_status "Creating namespace $K8S_NAMESPACE..."
-        kubectl create namespace $K8S_NAMESPACE
-    fi
+    # Create namespace if it doesn't exist
+    create_namespace
     
-    # Apply ConfigMap
+    # Apply ConfigMap if exists
     if [ -f "$SCRIPT_DIR/config/engine-config.yml" ]; then
         print_status "Creating ConfigMap..."
         kubectl create configmap legend-engine-config \
@@ -65,9 +48,7 @@ deploy_engine() {
     fi
     
     # Wait for deployment
-    print_status "Waiting for Legend Engine to be ready..."
-    kubectl wait --for=condition=available --timeout=300s \
-        deployment/legend-engine -n $K8S_NAMESPACE || true
+    wait_for_deployment "legend-engine" "$K8S_NAMESPACE" 300
     
     print_success "Legend Engine deployed successfully!"
 }
@@ -77,12 +58,10 @@ validate_engine() {
     print_status "Validating Legend Engine deployment..."
     
     # Check pod status
-    POD_STATUS=$(kubectl get pods -n $K8S_NAMESPACE -l app=legend-engine -o jsonpath='{.items[0].status.phase}' 2>/dev/null || echo "Not Found")
-    
-    if [ "$POD_STATUS" = "Running" ]; then
+    if check_pod_status "legend-engine" "$K8S_NAMESPACE"; then
         print_success "Legend Engine pod is running"
     else
-        print_error "Legend Engine pod status: $POD_STATUS"
+        print_error "Legend Engine pod is not running properly"
         return 1
     fi
     
@@ -96,33 +75,36 @@ validate_engine() {
         return 1
     fi
     
-    # Port forward for testing
-    print_status "Setting up port-forward for testing..."
-    kubectl port-forward -n $K8S_NAMESPACE svc/legend-engine 6300:6300 &
-    PF_PID=$!
-    sleep 5
-    
-    # Test health endpoint
-    if curl -f http://localhost:6300/api/server/v1/info &>/dev/null 2>&1; then
-        print_success "Legend Engine health check passed"
-    else
-        print_warning "Legend Engine health check failed (may need more time to start)"
+    # Port forward for testing (if running locally)
+    if [ "$DEPLOYMENT_ENV" = "local" ]; then
+        print_status "Setting up port-forward for testing..."
+        kubectl port-forward -n $K8S_NAMESPACE svc/legend-engine 6300:6300 &
+        PF_PID=$!
+        sleep 5
+        
+        # Test health endpoint
+        if curl -f http://localhost:6300/api/server/v1/info &>/dev/null 2>&1; then
+            print_success "Legend Engine health check passed"
+        else
+            print_warning "Legend Engine health check failed (may need more time to start)"
+        fi
+        
+        # Clean up port-forward
+        kill $PF_PID 2>/dev/null || true
     fi
     
-    # Clean up port-forward
-    kill $PF_PID 2>/dev/null || true
-    
     print_success "Validation complete!"
+    return 0
 }
 
 # Function to show status
 show_status() {
-    print_status "Legend Engine Status:"
+    print_section "Legend Engine Status"
     echo ""
     kubectl get deployment,pod,svc -n $K8S_NAMESPACE -l app=legend-engine
     echo ""
     
-    # Show logs tail
+    # Show recent logs
     print_status "Recent logs:"
     kubectl logs -n $K8S_NAMESPACE -l app=legend-engine --tail=20 2>/dev/null || echo "No logs available"
 }
@@ -136,15 +118,28 @@ cleanup() {
     print_success "Legend Engine removed"
 }
 
+# Show configuration
+show_config() {
+    print_section "Legend Engine Configuration"
+    echo "Environment: $DEPLOYMENT_ENV"
+    echo "Namespace: $K8S_NAMESPACE"
+    echo "Version: $LEGEND_ENGINE_VERSION"
+    echo "Port: $LEGEND_ENGINE_PORT"
+    echo "Memory Limit: $ENGINE_MEMORY_LIMIT"
+    echo "CPU Limit: $ENGINE_CPU_LIMIT"
+    echo "Replicas: $ENGINE_REPLICAS"
+    echo "Java Options: $ENGINE_JAVA_OPTS"
+}
+
 # Main execution
 main() {
-    echo "========================================="
-    echo "     Legend Engine Deployment"
-    echo "========================================="
+    print_section "Legend Engine Deployment"
     echo ""
     
     case "${1:-deploy}" in
         deploy)
+            show_config
+            echo ""
             deploy_engine
             validate_engine
             show_status
@@ -158,12 +153,16 @@ main() {
         clean|cleanup)
             cleanup
             ;;
+        config)
+            show_config
+            ;;
         *)
-            echo "Usage: $0 [deploy|validate|status|clean]"
+            echo "Usage: $0 [deploy|validate|status|clean|config]"
             echo "  deploy   - Deploy Legend Engine (default)"
             echo "  validate - Validate deployment"
             echo "  status   - Show current status"
             echo "  clean    - Remove deployment"
+            echo "  config   - Show configuration"
             exit 1
             ;;
     esac
