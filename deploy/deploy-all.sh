@@ -8,73 +8,44 @@ set -e
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Load common variables
-source "$SCRIPT_DIR/common.env"
+# Source common functions library
+source "$SCRIPT_DIR/lib/common-functions.sh"
 
-# Load secrets if available (from parent directory)
-if [ -f "$SCRIPT_DIR/../secrets.env" ]; then
-    print_status "Loading secrets from secrets.env..."
-    source "$SCRIPT_DIR/../secrets.env"
-elif [ -f "$SCRIPT_DIR/../.env.local" ]; then
-    print_status "Loading secrets from .env.local..."
-    source "$SCRIPT_DIR/../.env.local"
-else
-    print_warning "No secrets file found. Using placeholder values from common.env"
-fi
+# Determine deployment environment (default to local)
+DEPLOYMENT_ENV="${DEPLOYMENT_ENV:-local}"
 
-# Colors for output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+# Load all configuration (base -> environment-specific -> secrets)
+load_all_config "$DEPLOYMENT_ENV"
 
-print_status() { echo -e "${GREEN}[INFO]${NC} $1"; }
-print_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
-print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
-print_section() { echo -e "${BLUE}========== $1 ==========${NC}"; }
-
-# Function to check prerequisites
-check_prerequisites() {
-    print_section "Checking Prerequisites"
+# Wrapper function to check prerequisites specific to this deployment
+check_deployment_prerequisites() {
+    print_section "Checking Deployment Prerequisites"
     
-    # Check kubectl
-    if ! command -v kubectl &> /dev/null; then
-        print_error "kubectl not installed"
-        exit 1
+    # Use common function to check prerequisites based on environment
+    if [ "$DEPLOYMENT_ENV" = "local" ]; then
+        check_prerequisites "local"
+    else
+        check_prerequisites "k8s"
     fi
     
-    # Check cluster connection
-    if ! kubectl cluster-info &> /dev/null; then
-        print_error "Not connected to Kubernetes cluster"
-        exit 1
-    fi
-    
-    # Check envsubst
-    if ! command -v envsubst &> /dev/null; then
-        print_warning "envsubst not found. Installing..."
-        # Install envsubst based on OS
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            brew install gettext
-            brew link --force gettext
+    # Check code quality (optional but recommended)
+    if [ -f "$SCRIPT_DIR/check-code-quality.sh" ]; then
+        print_status "Running code quality check..."
+        if "$SCRIPT_DIR/check-code-quality.sh" >/dev/null 2>&1; then
+            print_success "Code quality check passed"
         else
-            apt-get update && apt-get install -y gettext-base
+            print_warning "Code quality issues found - consider running ./check-code-quality.sh for details"
         fi
     fi
     
-    print_success "Prerequisites check passed"
-}
-
-# Function to create namespace
-create_namespace() {
-    print_section "Setting up Namespace"
-    
-    if ! kubectl get namespace $K8S_NAMESPACE &>/dev/null; then
-        print_status "Creating namespace $K8S_NAMESPACE..."
-        kubectl create namespace $K8S_NAMESPACE
-    else
-        print_status "Namespace $K8S_NAMESPACE already exists"
+    # Validate configuration
+    if [ -f "$SCRIPT_DIR/validate-config.sh" ]; then
+        print_status "Validating configuration..."
+        if "$SCRIPT_DIR/validate-config.sh" "$DEPLOYMENT_ENV" >/dev/null 2>&1; then
+            print_success "Configuration validated"
+        else
+            print_warning "Configuration has issues - run ./validate-config.sh for details"
+        fi
     fi
 }
 
@@ -239,7 +210,7 @@ interactive_mode() {
         
         case $choice in
             1)
-                check_prerequisites
+                check_deployment_prerequisites
                 create_namespace
                 deploy_all
                 validate_all
@@ -253,7 +224,7 @@ interactive_mode() {
                 echo "  - legend-studio"
                 echo "  - legend-guardian"
                 read -p "Enter service name: " service
-                check_prerequisites
+                check_deployment_prerequisites
                 create_namespace
                 deploy_service "$service"
                 ;;
@@ -284,7 +255,7 @@ interactive_mode() {
 main() {
     case "${1:-menu}" in
         deploy)
-            check_prerequisites
+            check_deployment_prerequisites
             create_namespace
             deploy_all
             validate_all

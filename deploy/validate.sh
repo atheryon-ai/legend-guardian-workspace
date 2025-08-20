@@ -113,6 +113,74 @@ check_connectivity() {
     fi
 }
 
+# Function to check code quality with flake8
+check_code_quality() {
+    print_section "Code Quality Validation"
+    
+    # Check if flake8 is installed
+    if ! command -v flake8 &> /dev/null; then
+        print_warn "flake8 not installed. Installing..."
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            pip3 install flake8
+        else
+            pip3 install flake8
+        fi
+    fi
+    
+    echo "Running flake8 code quality checks..."
+    
+    # Check source code
+    if [ -d "$SCRIPT_DIR/../src" ]; then
+        echo -n "Checking source code quality... "
+        if flake8 "$SCRIPT_DIR/../src" --config="$SCRIPT_DIR/../.flake8" 2>/dev/null; then
+            print_pass "Source code quality passed"
+            VALIDATION_RESULTS="${VALIDATION_RESULTS}\n✓ Source code quality: OK"
+        else
+            print_fail "Source code quality issues found"
+            VALIDATION_RESULTS="${VALIDATION_RESULTS}\n✗ Source code quality: Issues found"
+            VALIDATION_FAILED=$((VALIDATION_FAILED + 1))
+            
+            # Show the issues
+            echo "Source code quality issues:"
+            flake8 "$SCRIPT_DIR/../src" --config="$SCRIPT_DIR/../.flake8" || true
+        fi
+    fi
+    
+    # Check test code
+    if [ -d "$SCRIPT_DIR/../tests" ]; then
+        echo -n "Checking test code quality... "
+        if flake8 "$SCRIPT_DIR/../tests" --config="$SCRIPT_DIR/../.flake8" 2>/dev/null; then
+            print_pass "Test code quality passed"
+            VALIDATION_RESULTS="${VALIDATION_RESULTS}\n✓ Test code quality: OK"
+        else
+            print_fail "Test code quality issues found"
+            VALIDATION_RESULTS="${VALIDATION_RESULTS}\n✗ Test code quality: Issues found"
+            VALIDATION_FAILED=$((VALIDATION_FAILED + 1))
+            
+            # Show the issues
+            echo "Test code quality issues:"
+            flake8 "$SCRIPT_DIR/../tests" --config="$SCRIPT_DIR/../.flake8" || true
+        fi
+    fi
+    
+    # Check main.py
+    if [ -f "$SCRIPT_DIR/../main.py" ]; then
+        echo -n "Checking main.py quality... "
+        if flake8 "$SCRIPT_DIR/../main.py" --config="$SCRIPT_DIR/../.flake8" 2>/dev/null; then
+            print_pass "main.py quality passed"
+            VALIDATION_RESULTS="${VALIDATION_RESULTS}\n✓ main.py quality: OK"
+        else
+            print_fail "main.py quality issues found"
+            VALIDATION_RESULTS="${VALIDATION_RESULTS}\n✗ main.py quality: Issues found"
+            VALIDATION_FAILED=$((VALIDATION_FAILED + 1))
+            
+            # Show the issues
+            echo "main.py quality issues:"
+            flake8 "$SCRIPT_DIR/../main.py" --config="$SCRIPT_DIR/../.flake8" || true
+        fi
+    fi
+}
+
 # Main validation
 main() {
     echo "========================================="
@@ -121,6 +189,10 @@ main() {
     echo ""
     
     echo "Namespace: $K8S_NAMESPACE"
+    echo ""
+    
+    # Check code quality first (before deployment validation)
+    check_code_quality
     echo ""
     
     # Check MongoDB

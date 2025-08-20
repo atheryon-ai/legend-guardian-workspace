@@ -5,57 +5,34 @@
 
 set -e
 
-# Colors for output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m'
+# Script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-print_status() { echo -e "${GREEN}[INFO]${NC} $1"; }
-print_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
-print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+# Source common functions library
+source "$SCRIPT_DIR/../lib/common-functions.sh"
 
-# Check prerequisites
-check_prerequisites() {
-    print_status "Checking prerequisites..."
+# Load all configuration for local deployment
+load_all_config "local"
+
+# Check local prerequisites
+check_local_prerequisites() {
+    print_section "Checking Local Prerequisites"
     
-    # Check Docker
-    if ! docker info &> /dev/null; then
-        print_error "Docker is not running. Please start Docker Desktop."
-        exit 1
+    # Use common function to check Docker prerequisites
+    check_prerequisites "local"
+    
+    # Check for local .env file (for docker-compose)
+    if [ ! -f "$SCRIPT_DIR/.env" ]; then
+        if [ -f "$SCRIPT_DIR/.env.example" ]; then
+            print_warning ".env file not found. Creating from template..."
+            cp "$SCRIPT_DIR/.env.example" "$SCRIPT_DIR/.env"
+            print_status "Please edit .env file with your GitLab OAuth credentials (optional)"
+        fi
     fi
-    
-    # Check Docker Compose
-    if ! docker-compose version &> /dev/null; then
-        print_error "Docker Compose is not installed."
-        exit 1
-    fi
-    
-    # Check for .env file
-if [ ! -f .env ]; then
-    print_warning ".env file not found. Creating from template..."
-    cp .env.example .env
-    print_status "Please edit .env file with your GitLab OAuth credentials (optional)"
-fi
-
-# Load secrets if available (from parent directory)
-if [ -f "../secrets.env" ]; then
-    print_status "Loading secrets from secrets.env..."
-    source "../secrets.env"
-elif [ -f "../.env.local" ]; then
-    print_status "Loading secrets from .env.local..."
-    source "../.env.local"
-else
-    print_warning "No secrets file found. Using default values"
-fi
     
     # Check port availability
-    for port in 6100 6300 9000 27017; do
-        if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
-            print_warning "Port $port is already in use"
-        fi
-    done
+    local ports=("$LEGEND_ENGINE_PORT" "$LEGEND_SDLC_PORT" "$LEGEND_STUDIO_PORT" "$MONGODB_PORT")
+    check_ports_available "${ports[@]}"
     
     print_success "Prerequisites check completed"
 }
@@ -143,12 +120,10 @@ show_status() {
 
 # Main execution
 main() {
-    echo "========================================="
-    echo "  Legend Local Development Environment"
-    echo "========================================="
+    print_section "Legend Local Development Environment"
     echo ""
     
-    check_prerequisites
+    check_local_prerequisites
     start_services "$1"
     wait_for_services
     show_status

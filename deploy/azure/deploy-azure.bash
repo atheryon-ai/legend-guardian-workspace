@@ -6,23 +6,32 @@
 
 set -e
 
-# Load environment variables
-if [ -f "azure-legend.env" ]; then
-    source azure-legend.env
-else
-    echo "❌ azure-legend.env file not found. Please create it from azure-legend.env.example"
-    exit 1
-fi
+# Script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Load secrets if available (from parent directory)
-if [ -f "../secrets.env" ]; then
-    echo "🔐 Loading secrets from secrets.env..."
-    source "../secrets.env"
-elif [ -f "../.env.local" ]; then
-    echo "🔐 Loading secrets from .env.local..."
-    source "../.env.local"
-else
-    echo "⚠️  No secrets file found. Using placeholder values from azure-legend.env"
+# Source common functions library
+source "$SCRIPT_DIR/../lib/common-functions.sh"
+
+# Load all configuration for Azure deployment
+load_all_config "azure"
+
+# Validate required Azure variables
+REQUIRED_VARS=(
+    "AZURE_SUBSCRIPTION_ID"
+    "AZURE_RESOURCE_GROUP"
+    "AZURE_LOCATION"
+    "AKS_NODE_COUNT"
+    "AKS_VM_SIZE"
+    "AKS_MIN_NODES"
+    "AKS_MAX_NODES"
+    "AKS_KUBERNETES_VERSION"
+    "AKS_SERVICE_CIDR"
+    "AKS_DNS_SERVICE_IP"
+)
+
+if ! validate_required_vars "${REQUIRED_VARS[@]}"; then
+    print_error "Please fix configuration issues before deploying"
+    exit 1
 fi
 
 # Configuration from environment variables
@@ -32,45 +41,33 @@ LOCATION="$AZURE_LOCATION"
 BICEP_FILE="azure-resources.bicep"
 PARAMETERS_FILE="azure-parameters.json"
 
-echo "🚀 Starting Azure Legend Platform Deployment"
-echo "=============================================="
+print_section "Azure Legend Platform Deployment"
 echo "Subscription ID: $SUBSCRIPTION_ID"
 echo "Resource Group: $RESOURCE_GROUP"
 echo "Location: $LOCATION"
 echo ""
 
-# Check if Azure CLI is installed
-if ! command -v az &> /dev/null; then
-    echo "❌ Azure CLI is not installed. Please install it first:"
-    echo "   https://docs.microsoft.com/en-us/cli/azure/install-azure-cli"
-    exit 1
-fi
-
-# Check if kubectl is installed
-if ! command -v kubectl &> /dev/null; then
-    echo "❌ kubectl is not installed. Please install it first:"
-    echo "   https://kubernetes.io/docs/tasks/tools/install-kubectl/"
-    exit 1
-fi
+# Check prerequisites
+check_prerequisites "azure"
 
 # Login to Azure
-echo "🔐 Logging into Azure..."
+print_status "Logging into Azure..."
 az login
 
 # Set subscription
-echo "📋 Setting subscription to $SUBSCRIPTION_ID..."
+print_status "Setting subscription to $SUBSCRIPTION_ID..."
 az account set --subscription $SUBSCRIPTION_ID
 
 # Create resource group
-echo "🏗️  Creating resource group $RESOURCE_GROUP..."
+print_status "Creating resource group $RESOURCE_GROUP..."
 az group create --name $RESOURCE_GROUP --location "$LOCATION"
 
 # Generate MongoDB password
 MONGO_PASSWORD=$(openssl rand -base64 32)
-echo "🔑 Generated MongoDB password"
+print_status "Generated MongoDB password"
 
 # Deploy Azure infrastructure
-echo "🚀 Deploying Azure infrastructure..."
+print_status "Deploying Azure infrastructure..."
 az deployment group create \
     --resource-group $RESOURCE_GROUP \
     --template-file $BICEP_FILE \
@@ -85,7 +82,7 @@ az deployment group create \
         aksDnsServiceIp="$AKS_DNS_SERVICE_IP"
 
 # Get deployment outputs
-echo "📊 Getting deployment outputs..."
+print_status "Getting deployment outputs..."
 ACR_LOGIN_SERVER=$(az deployment group show \
     --resource-group $RESOURCE_GROUP \
     --name $BICEP_FILE \
@@ -110,34 +107,34 @@ MONGO_CONNECTION_STRING=$(az deployment group show \
     --query properties.outputs.mongoConnectionString.value \
     --output tsv)
 
-echo "✅ Azure infrastructure deployed successfully!"
+print_success "Azure infrastructure deployed successfully!"
 echo ""
 
 # Get AKS credentials
-echo "🔑 Getting AKS credentials..."
+print_status "Getting AKS credentials..."
 az aks get-credentials --resource-group $RESOURCE_GROUP --name $AKS_CLUSTER_NAME --overwrite-existing
 
 # Verify cluster connection
-echo "🔍 Verifying cluster connection..."
+print_status "Verifying cluster connection..."
 kubectl cluster-info
 
 echo ""
-echo "🎉 Azure infrastructure deployment complete!"
-echo "=============================================="
+print_success "Azure infrastructure deployment complete!"
+print_section "Deployment Summary"
 echo "Resource Group: $RESOURCE_GROUP"
 echo "AKS Cluster: $AKS_CLUSTER_NAME"
 echo "ACR: $ACR_NAME"
 echo "ACR Login Server: $ACR_LOGIN_SERVER"
 echo ""
-echo "📝 Next steps:"
+print_section "Next Steps"
 echo "1. Update your GitLab OAuth app redirect URI to point to Azure"
 echo "2. Build and push Legend images to ACR"
 echo "3. Deploy Legend using FINOS Kubernetes manifests"
 echo ""
-echo "🔐 MongoDB password: $MONGO_PASSWORD"
-echo "💾 Save this password securely - you'll need it for Legend configuration"
+print_warning "MongoDB password: $MONGO_PASSWORD"
+print_warning "Save this password securely - you'll need it for Legend configuration"
 echo ""
-echo "📚 For Legend deployment, use the FINOS provided manifests:"
+print_status "For Legend deployment, use the FINOS provided manifests:"
 echo "   https://legend.finos.org/docs/deployment/kubernetes"
 echo ""
-echo "🚀 Ready to deploy Legend to Azure!"
+print_success "Ready to deploy Legend to Azure!"

@@ -14,6 +14,8 @@ help:
 	@echo "  make test      - Run tests with pytest"
 	@echo "  make coverage  - Run tests with coverage"
 	@echo "  make lint      - Lint with flake8"
+	@echo "  make code-quality - Run comprehensive code quality checks"
+	@echo "  make quality   - Alias for code-quality"
 	@echo "  make format    - Format with black"
 	@echo "  make clean     - Remove venv and caches"
 
@@ -39,6 +41,13 @@ coverage: venv
 
 lint: venv
 	$(VENV)/bin/flake8
+
+code-quality: venv
+	@echo "Running comprehensive code quality checks..."
+	./deploy/check-code-quality.sh
+
+quality: code-quality
+	@echo "Code quality check completed"
 
 format: venv
 	$(VENV)/bin/black .

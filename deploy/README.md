@@ -253,6 +253,28 @@ Legend Studio (Depends on Engine & SDLC)
 Guardian Agent (Monitors all above)
 ```
 
+## 🔍 Code Quality
+
+Ensure code quality before deployment:
+
+```bash
+# Run comprehensive code quality checks
+./deploy/check-code-quality.sh
+
+# Or use Makefile
+make code-quality
+make quality
+
+# Quick flake8 linting
+make lint
+```
+
+The code quality check includes:
+- **Python Code**: flake8 linting with `.flake8` configuration
+- **Shell Scripts**: shellcheck validation (if available)
+- **Configuration**: Auto-creates `.flake8` if missing
+- **Integration**: Runs automatically during deployment validation
+
 ## 🔍 Troubleshooting
 
 ### **Check Deployment Status**

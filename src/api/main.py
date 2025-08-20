@@ -77,7 +77,8 @@ app = FastAPI(
     **FINOS Legend platform monitoring and management system**
     
     ## Overview
-    The Legend Guardian Agent provides automated monitoring, validation, and management capabilities for the FINOS Legend platform.
+    The Legend Guardian Agent provides automated monitoring, validation, and
+    management capabilities for the FINOS Legend platform.
     
     ## Key Features
     - **Model Change Monitoring**: Automatically detects and analyzes model changes
