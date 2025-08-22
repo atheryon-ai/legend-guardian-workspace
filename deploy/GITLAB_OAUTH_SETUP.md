@@ -45,6 +45,13 @@ GITLAB_APP_ID=dbdd707e51066b5b948d238bb0f84b7a7d2c883e008671c7dc33c1c5c639c862
 - The "Confidential" checkbox wasn't enabled
 - The redirect URI doesn't match exactly
 
+### "State parameter is different from the one sent in authentication request"
+This is typically a cookie/session issue. Solutions:
+1. **Clear all cookies** for localhost in your browser
+2. **Use an incognito/private window** for clean session
+3. **Close all other tabs** accessing localhost services
+4. **Avoid using multiple tabs** during authentication flow
+
 ### "Sign in with GitHub" on GitLab
 If you use GitHub SSO for GitLab:
 1. Set a password at https://gitlab.com/-/profile/password/edit
