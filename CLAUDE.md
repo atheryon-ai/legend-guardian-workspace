@@ -18,20 +18,22 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Configure environment (create .env file with required variables)
-cp .env.example .env  # If example exists, otherwise create manually
+cp deploy/base.env .env  # Start with base configuration
+# Edit .env with your specific values
 ```
 
 ### Running the Application
 ```bash
-# Local development
+# Local development with hot reload
 python main.py
 
-# Docker
+# Docker standalone
 docker build -t legend-guardian-agent .
-docker run -p 8000:8000 legend-guardian-agent
+docker run -p 8000:8000 --env-file .env legend-guardian-agent
 
-# Docker Compose (includes Legend services for development)
-docker-compose up -d
+# Full platform with Docker Compose (includes all Legend services)
+cd deploy/local
+./start.sh
 ```
 
 ### Testing
@@ -44,6 +46,9 @@ pytest tests/ --cov=src --cov-report=html
 
 # Run specific test file
 pytest tests/test_agent.py -v
+
+# Run specific test
+pytest tests/test_agent.py::TestGuardianAgent::test_analyze -v
 ```
 
 ### Code Quality
@@ -51,18 +56,31 @@ pytest tests/test_agent.py -v
 # Format code with Black
 black src/ tests/
 
-# Check code style
+# Check code style  
 flake8 src/ tests/
+
+# Run both formatting and linting
+black src/ tests/ && flake8 src/ tests/
 ```
 
 ### Deployment
 ```bash
-# Azure AKS deployment
-cd azure-deployment
-./deploy-guardian-agent.sh
+# Deploy entire Legend platform (K8s)
+cd deploy
+./deploy-all.sh deploy
 
-# Kubernetes deployment
-kubectl apply -f k8s/
+# Deploy only Guardian Agent
+cd deploy/legend-guardian
+./deploy.sh deploy
+
+# Azure deployment with ACR
+cd deploy/azure
+./build-and-push-images.sh
+./deploy.sh
+
+# Validate deployment
+cd deploy
+./deploy-all.sh validate
 ```
 
 ## Architecture Overview
@@ -105,11 +123,17 @@ The system follows a layered microservice architecture with a central Guardian A
 
 ## Environment Configuration
 
+Configuration is managed through modular environment files in `deploy/`:
+- `base.env`: Core configuration shared across all environments
+- `deploy/local/local.env`: Local development overrides
+- `deploy/azure/azure.env`: Azure-specific configuration
+
 Required environment variables:
 ```bash
-# Legend Platform (Azure AKS endpoints)
-LEGEND_ENGINE_URL=http://52.186.106.13:6060
-LEGEND_SDLC_URL=http://52.186.106.13:7070
+# Legend Platform endpoints
+LEGEND_ENGINE_URL=http://legend-engine:6060  # K8s service name or external URL
+LEGEND_SDLC_URL=http://legend-sdlc:7070
+LEGEND_STUDIO_URL=http://legend-studio:9000
 LEGEND_API_KEY=your-legend-api-key
 
 # API Configuration
@@ -119,6 +143,10 @@ LEGEND_API_DEBUG=false
 
 # Security
 VALID_API_KEYS=key1,key2,key3  # Comma-separated list
+
+# Database
+MONGODB_URI=mongodb://mongodb:27017
+MONGODB_DATABASE=legend
 
 # Logging
 LEGEND_LOG_LEVEL=INFO
@@ -131,13 +159,41 @@ LEGEND_LOG_LEVEL=INFO
 - No integration tests currently - Legend services must be mocked
 - Tests use pytest-asyncio for async functionality
 
-## Deployment Targets
+## Deployment Architecture
 
-**Local Development**: Run directly with Python or use Docker Compose
-**Production**: Azure AKS with Kubernetes manifests in `k8s/` directory
+The deployment system uses a modular architecture in `deploy/`:
+
+```
+deploy/
+├── deploy-all.sh          # Master deployment orchestrator
+├── validate-config.sh     # Configuration validation
+├── lib/
+│   └── common-functions.sh # Shared deployment functions
+├── legend-engine/         # Engine service deployment
+├── legend-sdlc/           # SDLC service deployment  
+├── legend-studio/         # Studio UI deployment
+├── legend-guardian/       # Guardian agent deployment
+├── mongodb/               # Database deployment
+├── local/                 # Local Docker Compose setup
+├── azure/                 # Azure AKS deployment scripts
+└── k8s/                   # Base Kubernetes manifests
+```
+
+### Deployment Targets
+
+**Local Development**: Docker Compose with all services
+- Run: `cd deploy/local && ./start.sh`
+- Services available on localhost ports
+
+**Kubernetes (Production)**: Modular service deployment
+- Full platform: `./deploy-all.sh deploy`
+- Individual service: `./legend-guardian/deploy.sh deploy`
 - Resource limits: 512Mi-1Gi RAM, 250m-500m CPU
-- Uses Azure Container Registry (ACR)
+
+**Azure AKS**: Production deployment with ACR
 - Resource group: `rs-finos-legend`
+- Uses Azure Container Registry for images
+- Automated via GitHub Actions (when configured)
 
 ## API Authentication
 
@@ -154,24 +210,33 @@ curl -H "Authorization: Bearer your-api-key" http://localhost:8000/api/v1/model/
 4. **Configuration**: Environment-based with Pydantic validation
 5. **Security**: Non-root Docker user, API key authentication, no hardcoded secrets
 
-## Common Development Tasks
+## Key Development Patterns
 
 ### Adding New Agent Capabilities
 1. Extend `AgentCapability` enum in `src/agent/models.py`
-2. Add handler method in `GuardianAgent` class
-3. Update API endpoint if needed
-4. Add corresponding tests
+2. Add handler method in `GuardianAgent` class (`src/agent/guardian_agent.py`)
+3. Update API endpoint if needed in `src/api/main.py`
+4. Add corresponding tests in `tests/`
+5. Run tests to verify: `pytest tests/ -v`
 
 ### Modifying Legend Integration
 - Legend Engine client: `src/agent/clients/legend_engine.py`
 - Legend SDLC client: `src/agent/clients/legend_sdlc.py`
-- Both follow similar async patterns with error handling
+- Both use aiohttp for async HTTP communication
+- Follow existing error handling patterns with try-catch blocks
 
 ### Updating API Endpoints
 1. Add route in `src/api/main.py`
 2. Create request/response models in `src/api/models.py`
 3. Implement business logic in Guardian Agent
 4. Add authentication via `Depends(get_current_user)`
+5. Update OpenAPI docs will auto-generate at `/docs`
+
+### Deployment Configuration Updates
+1. Modify base configuration in `deploy/base.env`
+2. Add environment-specific overrides in respective directories
+3. Validate configuration: `./deploy/validate-config.sh`
+4. Test locally first: `cd deploy/local && ./start.sh`
 
 ### Commit and Pull Request Guidelines
 

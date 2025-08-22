@@ -12,11 +12,12 @@ This directory contains everything needed to run the Legend platform locally usi
 ### 1. Setup Environment
 
 ```bash
-# Copy the example environment file
-cp .env.example .env
-
-# Edit .env with your GitLab OAuth credentials (optional but recommended)
-nano .env
+# If you do not already have a secrets.env file, copy the example:
+if [ ! -f ../secrets.env ]; then
+  cp ../secrets.example ../secrets.env
+fi
+# Then edit secrets.env with your GitLab OAuth credentials and other secrets (required):
+nano ../secrets.env
 ```
 
 ### 2. Start Services
@@ -26,9 +27,9 @@ nano .env
 docker-compose up -d
 
 # Or start without Guardian Agent
-docker-compose up -d mongodb legend-engine legend-sdlc legend-studio
+docker-compose up -d legend-engine legend-sdlc legend-studio
 
-# To include Guardian Agent
+# To include Guardian Agent (if using profiles)
 docker-compose --profile guardian up -d
 ```
 
@@ -47,8 +48,10 @@ Once running, access the services at:
 ```
 local/
 ├── docker-compose.yml    # Main compose file
-├── .env.example         # Environment template
-├── .env                 # Your environment (git-ignored)
+├── ../secrets.example   # Secrets template (one level up)
+├── ../secrets.env       # Your secrets (git-ignored, one level up)
+├── .env.example         # (optional) local environment template
+├── .env                 # (optional) local environment (git-ignored)
 ├── config/              # Service configurations
 │   ├── engine-config.yml
 │   └── sdlc-config.yml
@@ -57,13 +60,23 @@ local/
 
 ## 🔧 Configuration
 
-### Environment Variables
+### Environment Variables & Secrets
 
-The `.env` file controls:
-- Service versions
-- Port mappings
+The `../secrets.env` file controls:
 - GitLab OAuth credentials
+- Azure credentials
 - API keys
+- Domain names
+
+This file is loaded into your containers using the `env_file` directive in `docker-compose.yml`.
+
+If you need a local .env file for Docker Compose overrides or local development, only copy .env.example to .env if .env does not already exist:
+```bash
+if [ ! -f .env ]; then
+  cp .env.example .env
+fi
+```
+Then edit .env as needed.
 
 ### Service Configurations
 
@@ -224,7 +237,7 @@ curl -X POST http://localhost:8000/api/v1/model/change \
    - Redirect URI: `http://localhost:6100/api/auth/callback`
    - Scopes: `api`, `read_user`, `openid`
 
-2. Update `.env` with credentials:
+2. Update `../secrets.env` with credentials:
 ```bash
 GITLAB_APP_ID=your-app-id
 GITLAB_APP_SECRET=your-app-secret
@@ -292,5 +305,5 @@ When making changes to the local development setup:
 
 1. Test all services start correctly
 2. Update this README with any new steps
-3. Keep `.env.example` in sync with required variables
+3. Keep `../secrets.example` in sync with required variables
 4. Test both with and without Guardian Agent profile

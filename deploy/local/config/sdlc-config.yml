@@ -25,8 +25,7 @@ gitlab:
 # MongoDB connection for session storage
 mongodb:
   uri: mongodb://admin:admin@mongodb:27017/legend?authSource=admin
-  database: legend
-  sessionsCollection: sessions
+  database: legend  sessionsCollection: sessions
 
 # Project configuration
 projectStructure:

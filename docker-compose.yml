@@ -5,12 +5,14 @@ services:
     build: .
     ports:
       - "8000:8000"
-    environment:
-      - LEGEND_ENGINE_URL=http://legend-engine:6060
-      - LEGEND_SDLC_URL=http://legend-sdlc:7070
-      - LEGEND_API_KEY=${LEGEND_API_KEY:-}
-      - LEGEND_LOG_LEVEL=INFO
-      - VALID_API_KEYS=${VALID_API_KEYS:-demo-key}
+    env_file:
+      - ./secrets.env
+  # All environment variables in ../secrets.env will be available in the container.
+  # If you need to override or add non-secret variables, use the environment: section below.
+  # environment:
+  #   - LEGEND_ENGINE_URL=http://legend-engine:6060
+  #   - LEGEND_SDLC_URL=http://legend-sdlc:7070
+  #   - LEGEND_LOG_LEVEL=INFO
     volumes:
       - ./logs:/app/logs
     restart: unless-stopped

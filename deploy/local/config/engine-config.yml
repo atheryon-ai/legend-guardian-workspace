@@ -1,5 +1,5 @@
 # Legend Engine Configuration for Local Development
-# Minimal configuration - most settings use defaults
+# Complete configuration with all required fields
 
 server:
   applicationConnectors:
@@ -14,19 +14,29 @@ logging:
   appenders:
     - type: console
 
-# Metadata store configuration
-metadata:
-  pure:
-    host: localhost
-    port: 6300
-    path: /api
+# Swagger configuration (required)
+swagger:
+  resourcePackage: org.finos.legend.engine
+  title: Legend Engine API
+  version: 1.0.0
 
-# Execution configuration  
-execution:
-  tempPath: /tmp/legend
-  maxThreads: 10
+# Pac4j configuration (required)
+pac4j:
+  bypassPaths:
+    - "/api/health"
+    - "/api/server/info"
+    - "/api/server/v1/info"
+  sessionTokenName: LegendSessionToken
+  mongoSession:
+    enabled: false
+  clients: []
+  authorizers: []
 
-# MongoDB connection (optional, for metadata storage)
+# MongoDB configuration
 mongodb:
-  uri: mongodb://admin:admin@mongodb:27017/legend?authSource=admin
+  url: mongodb://admin:admin@mongodb:27017/legend?authSource=admin
   database: legend
+
+# SDLC configuration
+sdlc:
+  url: http://legend-sdlc:6100
