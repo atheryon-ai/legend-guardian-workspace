@@ -13,13 +13,11 @@ services:
       - /etc/passwd:/etc/passwd:ro
       - /etc/shadow:/etc/shadow:ro
     entrypoint: /setup/setup.sh
-    env_file:
-      - ../../secrets.env
-      - .env
+    
     environment:
       - GITLAB_HOST=${GITLAB_HOST}
-      - GITLAB_APP_ID=${GITLAB_APP_ID}
-      - GITLAB_APP_SECRET=${GITLAB_APP_SECRET}
+      - GITLAB_APP_ID=dbdd707e51066b5b948d238bb0f84b7a7d2c883e008671c7dc33c1c5c639c862
+      - GITLAB_APP_SECRET=gloas-b2f54817acd471b92aaf4d3514bcc74e7c29210457d7e774941f457cd9686501
       - ENGINE_HOST=${ENGINE_HOST}
       - MONGODB_URI=${MONGODB_URI}
       - MONGODB_NAME=${MONGODB_NAME}
@@ -41,9 +39,7 @@ services:
     environment:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
       MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME}
-    env_file:
-      - ../../secrets.env
-      - .env
+    
     command: --auth
   # Servers
   legend-engine:
@@ -53,14 +49,13 @@ services:
       - mongodb
     container_name: "legend-engine"
     image: finos/legend-engine-server:${ENGINE_IMAGE_VERSION}
-    env_file:
-      - ../../secrets.env
-      - .env
+    
     environment:
       - GITLAB_HOST=${GITLAB_HOST}
-      - GITLAB_APP_ID=${GITLAB_APP_ID}
-      - GITLAB_APP_SECRET=${GITLAB_APP_SECRET}
+      - GITLAB_APP_ID=dbdd707e51066b5b948d238bb0f84b7a7d2c883e008671c7dc33c1c5c639c862
+      - GITLAB_APP_SECRET=gloas-b2f54817acd471b92aaf4d3514bcc74e7c29210457d7e774941f457cd9686501
       - ENGINE_HOST=${ENGINE_HOST}
+      - ENGINE_PORT=${ENGINE_PORT}
       - MONGODB_URI=${MONGODB_URI}
       - MONGODB_NAME=${MONGODB_NAME}
       - MONGO_SESSION_ENABLED=${MONGO_SESSION_ENABLED}
@@ -93,13 +88,11 @@ services:
       - mongodb
     container_name: "legend-sdlc"
     image: finos/legend-sdlc-server:${SDLC_IMAGE_VERSION}
-    env_file:
-      - ../../secrets.env
-      - .env
+    
     environment:
       - GITLAB_HOST=${GITLAB_HOST}
-      - GITLAB_APP_ID=${GITLAB_APP_ID}
-      - GITLAB_APP_SECRET=${GITLAB_APP_SECRET}
+      - GITLAB_APP_ID=dbdd707e51066b5b948d238bb0f84b7a7d2c883e008671c7dc33c1c5c639c862
+      - GITLAB_APP_SECRET=gloas-b2f54817acd471b92aaf4d3514bcc74e7c29210457d7e774941f457cd9686501
       - SDLC_PORT=${SDLC_PORT}
       - MONGODB_URI=${MONGODB_URI}
       - MONGODB_NAME=${MONGODB_NAME}
@@ -123,13 +116,11 @@ services:
        - mongodb
     container_name: "legend-depot-store"
     image: finos/legend-depot-store-server:${DEPOT_STORE_IMAGE_VERSION}
-    env_file:
-      - ../../secrets.env
-      - .env
+    
     environment:
       - GITLAB_HOST=$GITLAB_HOST
-      - GITLAB_APP_ID=$GITLAB_APP_ID
-      - GITLAB_APP_SECRET=$GITLAB_APP_SECRET
+      - GITLAB_APP_ID=dbdd707e51066b5b948d238bb0f84b7a7d2c883e008671c7dc33c1c5c639c862
+      - GITLAB_APP_SECRET=gloas-b2f54817acd471b92aaf4d3514bcc74e7c29210457d7e774941f457cd9686501
       - DEPOT_STORE_HOST=${DEPOT_STORE_HOST}
       - DEPOT_STORE_PORT=${DEPOT_STORE_PORT}
       - DEPOT_STORE_ADMIN_USER=${DEPOT_STORE_ADMIN_USER}
@@ -162,9 +153,7 @@ services:
     volumes:
       - ./depot-store/setup:/setup:ro
     entrypoint: /setup/setup.sh
-    env_file:
-      - ../../secrets.env
-      - .env
+    
     networks:
       - legend 
   legend-depot:
@@ -174,13 +163,11 @@ services:
       - mongodb
     container_name: "legend-depot"
     image: finos/legend-depot-server:${DEPOT_IMAGE_VERSION}
-    env_file:
-      - ../../secrets.env
-      - .env
+    
     environment:
       - GITLAB_HOST=$GITLAB_HOST
-      - GITLAB_APP_ID=$GITLAB_APP_ID
-      - GITLAB_APP_SECRET=$GITLAB_APP_SECRET
+      - GITLAB_APP_ID=dbdd707e51066b5b948d238bb0f84b7a7d2c883e008671c7dc33c1c5c639c862
+      - GITLAB_APP_SECRET=gloas-b2f54817acd471b92aaf4d3514bcc74e7c29210457d7e774941f457cd9686501
       - DEPOT_HOST=${DEPOT_HOST}
       - DEPOT_PORT=${DEPOT_PORT}
       - MONGODB_URI=${MONGODB_URI}
@@ -210,18 +197,17 @@ services:
       - legend-depot-store
     container_name: legend-studio
     image: finos/legend-studio:${STUDIO_IMAGE_VERSION}
-    env_file:
-      - ../../secrets.env
-      - .env
+    
     environment:
       - GITLAB_HOST=${GITLAB_HOST}
-      - GITLAB_APP_ID=${GITLAB_APP_ID}
-      - GITLAB_APP_SECRET=${GITLAB_APP_SECRET}
+      - GITLAB_APP_ID=dbdd707e51066b5b948d238bb0f84b7a7d2c883e008671c7dc33c1c5c639c862
+      - GITLAB_APP_SECRET=gloas-b2f54817acd471b92aaf4d3514bcc74e7c29210457d7e774941f457cd9686501
       - ENGINE_HOST=${ENGINE_HOST}
       - ENGINE_PORT=${ENGINE_PORT}
       - SDLC_HOST=${SDLC_HOST}
       - SDLC_PORT=${SDLC_PORT}
       - STUDIO_PORT=${STUDIO_PORT}
+      - STUDIO_HOST=${STUDIO_HOST:-localhost}
       - DEPOT_HOST=${DEPOT_HOST}
       - DEPOT_PORT=${DEPOT_PORT}
       - MONGODB_URI=${MONGODB_URI}
@@ -251,13 +237,11 @@ services:
       - legend-depot
     container_name: "legend-query"
     image: finos/legend-query:${QUERY_IMAGE_VERSION}
-    env_file:
-      - ../../secrets.env
-      - .env
+    
     environment:
       - GITLAB_HOST=$GITLAB_HOST
-      - GITLAB_APP_ID=$GITLAB_APP_ID
-      - GITLAB_APP_SECRET=$GITLAB_APP_SECRET
+      - GITLAB_APP_ID=dbdd707e51066b5b948d238bb0f84b7a7d2c883e008671c7dc33c1c5c639c862
+      - GITLAB_APP_SECRET=gloas-b2f54817acd471b92aaf4d3514bcc74e7c29210457d7e774941f457cd9686501
       - QUERY_HOST=${QUERY_HOST}
       - QUERY_PORT=${QUERY_PORT}
       - ENGINE_HOST=${ENGINE_HOST}
@@ -289,9 +273,7 @@ services:
       - setup
     container_name: "postgres"
     image: postgres:${POSTGRES_IMAGE_VERSION}
-    env_file:
-      - ../../secrets.env
-      - .env
+    
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
