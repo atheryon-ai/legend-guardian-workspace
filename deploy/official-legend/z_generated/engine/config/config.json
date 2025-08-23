@@ -54,7 +54,7 @@
     "connector": {
       "maxRequestHeaderSize": "32KiB",
       "type": "http",
-      "port": "${ENGINE_PORT}"
+      "port": "6300"
     },
     "requestLog": {
       "appenders": []
@@ -63,21 +63,21 @@
   "metadataserver": {
     "pure": {
       "host": "${METADATA_PURE_HOST}",
-      "port": ${METADATA_PURE_PORT}
+      "port": 6301
     },
     "alloy": {
       "host": "${METADATA_ALLOY_HOST}",
-      "port": ${METADATA_ALLOY_PORT},
+      "port": 6200,
       "prefix": "/depot/api"
     }, 
-    "sdlc": { "host":"legend-sdlc", "port":${SDLC_PORT}}
+    "sdlc": { "host":"legend-sdlc", "port":6100}
   },
   "temporarytestdb": {
-    "port": ${TEMP_DB_PORT}
+    "port": 6302
   },
   "relationalexecution": {
     "temporarytestdb": {
-      "port": ${TEMP_DB_PORT}
+      "port": 6302
     },
     "tempPath": "/tmp/",
     "flowProviderClass": "org.finos.legend.engine.authentication.LegendDefaultDatabaseAuthenticationFlowProvider",
