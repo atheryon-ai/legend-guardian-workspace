@@ -21,6 +21,11 @@ services:
   legend-studio:
     networks:
       - default
+    environment:
+      - ENGINE_HOST=dev.atheryon.ai
+      - SDLC_HOST=dev.atheryon.ai
+      - ENGINE_PORT=6300
+      - SDLC_PORT=6100
     labels:
       - traefik.enable=true
       - traefik.http.routers.studio.rule=Host(`dev.atheryon.ai`) && PathPrefix(`/studio`)
@@ -30,6 +35,11 @@ services:
   legend-sdlc:
     networks:
       - default
+    environment:
+      - SDLC_HOST=dev.atheryon.ai
+      - SDLC_ADMIN_PORT=6101
+      - SDLC_PROJECT_TAG=legend
+      - SDLC_REDIRECT_URI=http://dev.atheryon.ai:6100/api/auth/callback
     labels:
       - traefik.enable=true
       - traefik.http.routers.sdlc.rule=Host(`dev.atheryon.ai`) && PathPrefix(`/sdlc`)
@@ -42,6 +52,10 @@ services:
   legend-engine:
     networks:
       - default
+    environment:
+      - ENGINE_HOST=dev.atheryon.ai
+      - SDLC_PORT=6100
+      - TEMP_DB_PORT=6302
     labels:
       - traefik.enable=true
       - traefik.http.routers.engine.rule=Host(`dev.atheryon.ai`) && PathPrefix(`/engine`)
