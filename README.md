@@ -183,22 +183,10 @@ pytest tests/ --cov=src --cov-report=html
 
 ## 🚀 Deployment
 
-### Docker
-```bash
-# Build and run
-docker build -t legend-guardian-agent .
-docker run -p 8000:8000 legend-guardian-agent
-```
-
-### Docker Compose
-```bash
-# Start all services
-docker-compose up -d
-```
-
 ### Kubernetes
 ```bash
-kubectl apply -f k8s/
+cd deploy
+./deploy-all.sh
 ```
 
 ## 📊 Monitoring

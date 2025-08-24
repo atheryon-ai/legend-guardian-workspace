@@ -169,7 +169,7 @@ The deployment system automatically loads secrets in this order:
 
 This means:
 - **Development**: Use `secrets.env` with real values
-- **CI/CD**: Use environment variables or secure secret management
+- **CI/CD**:. Use environment variables or secure secret management
 - **Team sharing**: Share `secrets.example` template
 
 ### **Customizing Deployments**
@@ -209,22 +209,6 @@ Edit service-specific config files:
 ```
 
 ## 🧪 Testing
-
-### **Local Testing**
-```bash
-cd deploy/local
-./start.sh
-
-# Or start specific services
-./start.sh core      # Core services only
-./start.sh all       # All services including Guardian
-./start.sh guardian  # Guardian Agent only
-```
-
-### **Local Configuration**
-The local development environment uses its own configuration files in `local/config/`:
-- `local/config/engine-config.yml` - Local engine settings
-- `local/config/sdlc-config.yml` - Local SDLC settings
 
 ### **Port Forwarding (Azure/K8s)**
 ```bash

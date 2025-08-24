@@ -122,7 +122,6 @@ Commands:
 - `all` - Validate all configurations
 - `base` - Validate base configuration
 - `azure` - Validate Azure configuration
-- `local` - Validate local configuration
 - `secrets` - Check secrets file
 - `structure` - Check file structure
 - `menu` - Interactive menu (default)
@@ -135,16 +134,6 @@ cd azure
 ./process-k8s-manifests.sh # Process Kubernetes manifests
 ```
 
-### Local Development
-```bash
-cd local
-./start.sh [all|core|guardian]
-```
-Options:
-- `all` - Start all services including Guardian
-- `core` - Start only core Legend services
-- `guardian` - Start only Guardian agent
-
 ## Common Functions Library
 
 The `lib/common-functions.sh` file provides reusable functions:
@@ -154,7 +143,6 @@ The `lib/common-functions.sh` file provides reusable functions:
 - **Validation**: `validate_required_vars`, `is_placeholder`
 - **Prerequisites**: `check_kubectl`, `check_docker`, `check_azure_cli`
 - **Kubernetes helpers**: `create_namespace`, `wait_for_deployment`
-- **Port checking**: `check_port_available`, `check_ports_available`
 
 ## Environment Variables
 
@@ -173,18 +161,12 @@ The `lib/common-functions.sh` file provides reusable functions:
 - `GITLAB_APP_ID` - GitLab OAuth app ID
 - `GITLAB_APP_SECRET` - GitLab OAuth app secret
 
-### Required for Local
-- `LEGEND_ENGINE_PORT` - Engine port (default: 6300)
-- `LEGEND_SDLC_PORT` - SDLC port (default: 6100)
-- `LEGEND_STUDIO_PORT` - Studio port (default: 9000)
-
 ## Troubleshooting
 
 ### Configuration Issues
 ```bash
 # Check what values are being loaded
 ./validate-config.sh show-azure
-./validate-config.sh show-local
 
 # Validate specific environment
 ./validate-config.sh azure
@@ -197,14 +179,6 @@ The `lib/common-functions.sh` file provides reusable functions:
 
 # Create from template if missing
 cp ../secrets.example ../secrets.env
-```
-
-### Port Conflicts (Local)
-```bash
-# Check which ports are in use
-lsof -i :6300
-lsof -i :6100
-lsof -i :9000
 ```
 
 ### Kubernetes Issues
@@ -225,8 +199,7 @@ kubectl get pods -n legend
 2. **Use validate-config.sh** before deploying
 3. **Keep environment-specific files minimal** - Only override what's necessary
 4. **Use placeholder detection** - The system warns about placeholder values
-5. **Test locally first** - Use local deployment before Azure/K8s
-6. **Document changes** - Update this guide when adding new configuration
+5. **Document changes** - Update this guide when adding new configuration
 
 ## Adding New Configuration
 
