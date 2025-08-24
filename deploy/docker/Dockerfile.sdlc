@@ -1,0 +1,22 @@
+# Legend SDLC Dockerfile for Azure
+FROM finos/legend-sdlc-server:0.195.0
+
+# Set environment variables for Azure deployment
+ENV JAVA_OPTS="-Xmx2g -Xms1g"
+ENV MONGODB_NAME=legend
+ENV SDLC_PORT=6100
+ENV SDLC_ADMIN_PORT=6101
+ENV ENGINE_MAVEN_VERSION=4.40.3
+ENV SDLC_MAVEN_VERSION=0.195.0
+ENV SDLC_PROJECT_TAG=legend
+ENV MONGO_SESSION_ENABLED=false
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:6100/api/health || exit 1
+
+# Expose ports
+EXPOSE 6100 6101
+
+# Default command
+CMD ["java", "-cp", "/app/bin/*", "org.finos.legend.sdlc.server.LegendSDLCServer", "server", "/app/config/config.yml"]
