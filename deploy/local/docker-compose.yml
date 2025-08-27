@@ -37,7 +37,7 @@ services:
       - MONGODB_URI=mongodb://admin:admin@mongodb:27017/legend?authSource=admin
       - JAVA_OPTS=-Xmx2g -Xms1g -XX:+UseG1GC
     volumes:
-      - ./config/engine-config.yml:/config/config.yml:ro
+      - ../docker-config-overrides/engine-config.yml:/config/config.yml:ro
     depends_on:
       mongodb:
         condition: service_healthy
@@ -65,7 +65,7 @@ services:
       - GITLAB_APP_SECRET=${GITLAB_APP_SECRET}
       - JAVA_OPTS=-Xmx2g -Xms1g -XX:+UseG1GC
     volumes:
-      - ./config/sdlc-config.yml:/config/config.yml:ro
+      - ../docker-config-overrides/sdlc-config.yml:/config/config.yml:ro
     depends_on:
       mongodb:
         condition: service_healthy
