@@ -18,15 +18,16 @@ deploy/
 │   ├── docker-compose.yml   # Simple local setup
 │   └── start.sh             # Convenience startup script
 │
-├── k8s/                     # Kubernetes deployment (consolidated)
+├── k8s/                     # Kubernetes deployment (generic)
 │   ├── base/               # Base resources
 │   └── services/           # Service deployments
 │
-├── k8s-overrides/          # Environment-specific K8s customizations
-│   └── production/         # Production overrides example
+├── k8s-azure/              # Azure AKS deployment tooling
+│   ├── deploy.sh          # AKS deployment script
+│   └── process-k8s-manifests.sh # Process K8s files for Azure
 │
-└── azure/                  # Azure-specific deployment scripts
-    └── build-and-push-images.sh
+└── k8s-overrides/          # Environment-specific K8s customizations
+    └── production/         # Production overrides example
 ```
 
 ## Quick Start
@@ -38,9 +39,15 @@ cd deploy/docker-local
 ./start.sh full         # Include Guardian Agent
 ```
 
-### Kubernetes
+### Kubernetes (Generic)
 ```bash
 kubectl apply -k deploy/k8s/
+```
+
+### Kubernetes (Azure AKS)
+```bash
+cd deploy/k8s-azure
+./deploy.sh             # Deploy to Azure AKS
 ```
 
 ### Official FINOS Docker Setup
@@ -62,5 +69,6 @@ cd deploy/docker-finos-official
 - **docker-config-overrides/** - Configuration files for Docker deployments
 - **docker-finos-official/** - Official FINOS provided Docker setup (unchanged)
 - **docker-local/** - Simplified Docker Compose for quick local development
-- **k8s/** - Production-ready Kubernetes manifests
+- **k8s/** - Generic Kubernetes manifests (works on any K8s cluster)
+- **k8s-azure/** - Azure AKS specific deployment tooling (uses k8s/ manifests)
 - **k8s-overrides/** - Environment-specific Kubernetes customizations
