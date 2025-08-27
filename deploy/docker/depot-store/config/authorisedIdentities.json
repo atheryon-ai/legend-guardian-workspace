@@ -1,0 +1,8 @@
+{
+  "authorisedIdentities": [
+    {
+      "name": "${DEPOT_STORE_ADMIN_USER}",
+      "permissions": ["READ", "WRITE", "DELETE"]
+    }
+  ]
+}

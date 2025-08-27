@@ -8,11 +8,27 @@ Modular deployment system for the FINOS Legend platform with per-service managem
 ```bash
 cd deploy
 
-# Interactive menu
+# Master deployment script (interactive)
+./deploy.sh
+
+# Or deploy to specific endpoints:
+
+# Kubernetes deployment
+cd kubernetes
 ./deploy-all.sh
 
-# Or direct deployment
-./deploy-all.sh deploy
+# Docker deployment (Official FINOS Legend)
+cd docker
+./run-legend.sh studio up -d
+
+# For other profiles:
+./run-legend.sh setup up        # One-time setup
+./run-legend.sh query up -d     # Full stack
+./run-legend.sh engine up -d    # Engine only
+
+# Azure deployment
+cd azure
+./deploy-azure.bash
 ```
 
 ### **Deploy Individual Services**
@@ -20,19 +36,19 @@ cd deploy
 cd deploy
 
 # Deploy only MongoDB
-./mongodb/deploy.sh deploy
+./kubernetes/components/mongodb/deploy.sh deploy
 
 # Deploy only Legend Engine
-./legend-engine/deploy.sh deploy
+./kubernetes/components/legend-engine/deploy.sh deploy
 
 # Deploy only Legend SDLC
-./legend-sdlc/deploy.sh deploy
+./kubernetes/components/legend-sdlc/deploy.sh deploy
 
 # Deploy only Legend Studio
-./legend-studio/deploy.sh deploy
+./kubernetes/components/legend-studio/deploy.sh deploy
 
 # Deploy Guardian Agent
-./legend-guardian/deploy.sh deploy
+./kubernetes/components/legend-guardian/deploy.sh deploy
 ```
 
 ### **Azure AKS Deployment**
@@ -61,61 +77,67 @@ cd ..
 
 ```
 deploy/
-├── common.env                  # Shared environment variables
-├── deploy-all.sh              # Master deployment orchestrator
-├── validate.sh                # Platform-wide validation
-├── README.md                  # This documentation file
-├── README 2.md                # Additional deployment notes
-├── config/                    # Global configuration files
-│   ├── engine-config.yml      # Legend Engine configuration
-│   └── sdlc-config.yml        # Legend SDLC configuration
-├── k8s/                       # Shared Kubernetes resources
-│   ├── namespace.yaml         # Namespace and configmap
-│   └── secrets.yaml           # Shared secrets
-├── legend-engine/             # Legend Engine Service
-│   ├── engine.env            # Engine-specific variables
-│   ├── deploy.sh             # Engine deployment script
-│   ├── config/               # Engine configuration
-│   │   └── engine-config.yml # Engine config file
-│   └── k8s/                  # Engine Kubernetes manifests
-│       └── engine.yaml
-├── legend-sdlc/               # Legend SDLC Service
-│   ├── sdlc.env              # SDLC-specific variables
-│   ├── deploy.sh             # SDLC deployment script
-│   └── k8s/                  # SDLC Kubernetes manifests
-│       └── sdlc.yaml
-├── legend-studio/             # Legend Studio Service
-│   ├── studio.env            # Studio-specific variables
-│   └── k8s/                  # Studio Kubernetes manifests
-│       └── studio.yaml
-├── legend-guardian/           # Guardian Agent Service
-│   ├── guardian.env          # Guardian-specific variables
-│   └── k8s/                  # Guardian Kubernetes manifests
-│       └── guardian.yaml
-├── mongodb/                   # MongoDB Service
-│   ├── mongodb.env           # MongoDB-specific variables
-│   └── k8s/                  # MongoDB Kubernetes manifests
-│       └── mongodb.yaml
-├── azure/                     # Azure-specific deployments
+├── shared/                    # Shared across all endpoints
+│   ├── base.env              # Base configuration (shared by all environments)
+│   ├── common.env            # Common environment variables
+│   └── lib/                  # Shared bash functions library
+├── azure/                    # Azure endpoint
 │   ├── azure-legend.env      # Azure environment config
 │   ├── azure-legend.env.example # Azure environment template
 │   ├── azure-resources.bicep # Azure infrastructure template
 │   ├── deploy.sh             # Azure deployment script
 │   ├── deploy-azure.bash     # Azure infrastructure deployment
 │   ├── build-and-push-images.sh # Docker image management
-│   ├── process-k8s-manifests.sh # Manifest processing
-│   └── generate-api-keys.sh  # API key generation
-├── local/                     # Local development
-│   ├── docker-compose.yml    # Local stack
-│   ├── start.sh              # Local startup script
-│   ├── README.md             # Local development guide
-│   └── config/               # Local configuration
-│       ├── engine-config.yml # Local engine config
-│       └── sdlc-config.yml   # Local SDLC config
-└── docker/                    # Docker images
-    ├── Dockerfile.engine     # Engine Dockerfile
-    ├── Dockerfile.sdlc       # SDLC Dockerfile
-    └── Dockerfile.studio     # Studio Dockerfile
+│   └── process-k8s-manifests.sh # Manifest processing
+├── docker/                    # Docker endpoint (Official FINOS Legend)
+│   ├── run-legend.sh         # Main deployment script with secrets integration
+│   ├── docker-compose.yml    # Official FINOS Legend deployment
+│   ├── setup.sh              # Configuration generation script
+│   ├── .env                  # Service configuration
+│   ├── engine/config/        # Engine configuration files
+│   ├── depot-store/config/   # Depot store configuration
+│   └── README_DOCKER.md      # Docker deployment documentation
+│   ├── docker-compose.prod.yml # Production environment
+│   ├── .dockerignore         # Docker build optimization
+│   └── README_DOCKER.md      # Docker documentation
+├── kubernetes/                # Kubernetes endpoint
+│   ├── components/            # All components for K8s
+│   │   ├── legend-engine/    # Legend Engine Service
+│   │   │   ├── engine.env    # Engine-specific variables
+│   │   │   ├── deploy.sh     # Engine deployment script
+│   │   │   ├── config/       # Engine configuration
+│   │   │   │   └── engine-config.yml
+│   │   │   └── k8s/          # Engine Kubernetes manifests
+│   │   │       └── engine.yaml
+│   │   ├── legend-sdlc/      # Legend SDLC Service
+│   │   │   ├── sdlc.env      # SDLC-specific variables
+│   │   │   ├── deploy.sh     # SDLC deployment script
+│   │   │   └── k8s/          # SDLC Kubernetes manifests
+│   │   │       └── sdlc.yaml
+│   │   ├── legend-studio/    # Legend Studio Service
+│   │   │   ├── studio.env    # Studio-specific variables
+│   │   │   └── k8s/          # Studio Kubernetes manifests
+│   │   │       └── studio.yaml
+│   │   ├── legend-guardian/  # Guardian Agent Service
+│   │   │   ├── guardian.env  # Guardian-specific variables
+│   │   │   └── k8s/          # Guardian Kubernetes manifests
+│   │   │       └── guardian.yaml
+│   │   └── mongodb/          # MongoDB Service
+│   │       ├── mongodb.env   # MongoDB-specific variables
+│   │       └── k8s/          # MongoDB Kubernetes manifests
+│   │           └── mongodb.yaml
+│   ├── shared/               # Shared Kubernetes resources
+│   │   ├── namespace.yaml    # Namespace and configmap
+│   │   └── secrets.yaml      # Shared secrets
+│   └── config/               # Global configuration files
+│       ├── engine-config.yml # Legend Engine configuration
+│       └── sdlc-config.yml   # Legend SDLC configuration
+├── kubernetes/
+│   ├── deploy-all.sh         # Kubernetes deployment orchestrator
+├── validate.sh                # Platform-wide validation
+├── validate-config.sh         # Configuration validation
+├── setup-secrets.sh           # Secrets setup script
+└── README.md                  # This documentation file
 ```
 
 ## 🔧 Configuration
@@ -137,26 +159,30 @@ cp secrets.example secrets.env
 
 ### **Configuration Files Hierarchy**
 
-1. **`common.env`** - Shared across all services
+1. **`shared/base.env`** - Base configuration (shared by all environments)
+   - Legend versions
+   - Default ports and hosts
+   - Common settings
+
+2. **`shared/common.env`** - Common environment variables
    - Azure infrastructure settings
    - Kubernetes configuration
    - GitLab OAuth credentials
    - MongoDB connection
-   - Legend versions
 
-2. **`config/`** - Global configuration files
+3. **`kubernetes/config/`** - Global configuration files
    - `engine-config.yml` - Legend Engine configuration
    - `sdlc-config.yml` - Legend SDLC configuration
 
-3. **Service-specific .env files** - Override/extend common variables
-   - `legend-engine/engine.env`
-   - `legend-sdlc/sdlc.env`
-   - `legend-studio/studio.env`
-   - `legend-guardian/guardian.env`
-   - `mongodb/mongodb.env`
+4. **Service-specific .env files** - Override/extend common variables
+   - `kubernetes/components/legend-engine/engine.env`
+   - `kubernetes/components/legend-sdlc/sdlc.env`
+   - `kubernetes/components/legend-studio/studio.env`
+   - `kubernetes/components/legend-guardian/guardian.env`
+   - `kubernetes/components/mongodb/mongodb.env`
 
-4. **Service-specific config files** - Service configurations
-   - `legend-engine/config/engine-config.yml`
+5. **Service-specific config files** - Service configurations
+   - `kubernetes/components/legend-engine/config/engine-config.yml`
    - `local/config/engine-config.yml` (local development)
    - `local/config/sdlc-config.yml` (local development)
 
@@ -169,7 +195,7 @@ The deployment system automatically loads secrets in this order:
 
 This means:
 - **Development**: Use `secrets.env` with real values
-- **CI/CD**: Use environment variables or secure secret management
+- **CI/CD**:. Use environment variables or secure secret management
 - **Team sharing**: Share `secrets.example` template
 
 ### **Customizing Deployments**
@@ -210,22 +236,6 @@ Edit service-specific config files:
 
 ## 🧪 Testing
 
-### **Local Testing**
-```bash
-cd deploy/local
-./start.sh
-
-# Or start specific services
-./start.sh core      # Core services only
-./start.sh all       # All services including Guardian
-./start.sh guardian  # Guardian Agent only
-```
-
-### **Local Configuration**
-The local development environment uses its own configuration files in `local/config/`:
-- `local/config/engine-config.yml` - Local engine settings
-- `local/config/sdlc-config.yml` - Local SDLC settings
-
 ### **Port Forwarding (Azure/K8s)**
 ```bash
 # Forward all services
@@ -262,8 +272,8 @@ cd deploy
 ./deploy-all.sh status
 
 # Individual service status
-./legend-engine/deploy.sh status
-./mongodb/deploy.sh status
+./kubernetes/components/legend-engine/deploy.sh status
+./kubernetes/components/mongodb/deploy.sh status
 ```
 
 ### **Validate Deployments**
@@ -272,7 +282,7 @@ cd deploy
 ./validate.sh
 
 # Service-specific validation
-./legend-engine/deploy.sh validate
+./kubernetes/components/legend-engine/deploy.sh validate
 ```
 
 ### **Check Logs**

@@ -1,0 +1,8 @@
+{
+  "authorisedIdentities": [
+    {
+      "name": "nobody",
+      "permissions": ["READ", "WRITE", "DELETE"]
+    }
+  ]
+}

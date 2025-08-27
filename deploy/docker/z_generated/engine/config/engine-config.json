@@ -1,0 +1,21 @@
+{
+  "appName": "Legend Engine",
+  "metastore": {
+    "type": "MongoDB",
+    "connection": {
+      "uri": "${MONGODB_URI}",
+      "database": "${MONGODB_NAME}"
+    }
+  },
+  "server": {
+    "port": 6300,
+    "host": "0.0.0.0"
+  },
+  "vault": {
+    "type": "MongoDB",
+    "connection": {
+      "uri": "${MONGODB_URI}",
+      "database": "${MONGODB_NAME}"
+    }
+  }
+}

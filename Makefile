@@ -1,49 +1,31 @@
-SHELL := /bin/bash
-VENV ?= venv
-PY := $(VENV)/bin/python
-PIP := $(VENV)/bin/pip
+# Atheryon FINOS Legend Deployment Makefile
 
-.PHONY: help venv install run uvicorn test coverage lint format clean
-.DEFAULT_GOAL := help
+.PHONY: help install docker-build docker-compose docker-compose-down docker-compose-logs clean
 
-help:
-	@echo "Common tasks:"
-	@echo "  make install   - Create venv and install deps"
-	@echo "  make run       - Run API via python main.py"
-	@echo "  make uvicorn   - Run API via uvicorn (reload)"
-	@echo "  make test      - Run tests with pytest"
-	@echo "  make coverage  - Run tests with coverage"
-	@echo "  make lint      - Lint with flake8"
-	@echo "  make format    - Format with black"
-	@echo "  make clean     - Remove venv and caches"
+help: ## Show this help message
+	@echo "Atheryon FINOS Legend Deployment"
+	@echo "================================"
+	@echo ""
+	@echo "Available commands:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-venv:
-	@test -d $(VENV) || python -m venv $(VENV)
-	@echo "Virtual env ready at $(VENV)"
+install: ## Install dependencies (not needed for Docker deployment)
+	@echo "No dependencies to install for Docker deployment"
+	@echo "Use 'make docker-compose' to deploy Legend platform"
 
-install: venv
-	$(PIP) install --upgrade pip
-	$(PIP) install -r requirements.txt
+docker-build: ## Build Legend platform Docker images
+	cd deploy/docker && docker-compose build
 
-run: venv
-	$(PY) main.py
+docker-compose: ## Deploy Legend platform with Docker Compose
+	cd deploy/docker && docker-compose up -d
 
-uvicorn: venv
-	$(VENV)/bin/uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
+docker-compose-down: ## Stop Legend platform services
+	cd deploy/docker && docker-compose down
 
-test: venv
-	$(VENV)/bin/pytest tests/ -v
+docker-compose-logs: ## View Legend platform logs
+	cd deploy/docker && docker-compose logs -f
 
-coverage: venv
-	$(VENV)/bin/pytest tests/ --cov=src --cov-report=term-missing
-
-lint: venv
-	$(VENV)/bin/flake8
-
-format: venv
-	$(VENV)/bin/black .
-
-clean:
-	rm -rf $(VENV) .pytest_cache .mypy_cache **/__pycache__
-	find . -type d -name "__pycache__" -prune -exec rm -rf {} +
+clean: ## Clean up Docker resources
+	cd deploy/docker && docker-compose down -v
+	docker system prune -f
 
