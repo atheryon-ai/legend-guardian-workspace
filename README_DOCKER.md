@@ -7,7 +7,7 @@ All Docker configurations have been consolidated for clarity:
 ```
 legend-guardian-workspace/
 ├── Dockerfile                    # Guardian Agent application (Python)
-├── docker-compose.yml           # Instructions pointing to deploy/local
+├── docker-compose.yml           # Instructions pointing to deploy/docker-local
 └── deploy/
     └── local/
         ├── docker-compose.yml   # Complete Legend stack
@@ -22,22 +22,22 @@ legend-guardian-workspace/
 ### Option 1: Run Everything (Recommended)
 ```bash
 # From repository root
-docker-compose -f deploy/local/docker-compose.yml --profile full up -d
+docker-compose -f deploy/docker-local/docker-compose.yml --profile full up -d
 
 # Or navigate to local directory
-cd deploy/local
+cd deploy/docker-local
 docker-compose --profile full up -d
 ```
 
 ### Option 2: Run Core Services Only
 ```bash
 # Without Guardian Agent
-docker-compose -f deploy/local/docker-compose.yml up -d
+docker-compose -f deploy/docker-local/docker-compose.yml up -d
 ```
 
 ### Option 3: Use the helper script
 ```bash
-cd deploy/local
+cd deploy/docker-local
 ./start.sh
 ```
 
@@ -54,7 +54,7 @@ cd deploy/local
 ## 🔧 Configuration
 
 ### Environment Variables
-Create a `.env` file in `deploy/local/`:
+Create a `.env` file in `deploy/docker-local/`:
 
 ```bash
 # Legend versions
@@ -108,31 +108,31 @@ MongoDB
 ### Check Status
 ```bash
 # View all containers
-docker-compose -f deploy/local/docker-compose.yml ps
+docker-compose -f deploy/docker-local/docker-compose.yml ps
 
 # View logs
-docker-compose -f deploy/local/docker-compose.yml logs -f [service-name]
+docker-compose -f deploy/docker-local/docker-compose.yml logs -f [service-name]
 
 # View specific service logs
-docker-compose -f deploy/local/docker-compose.yml logs -f legend-engine
+docker-compose -f deploy/docker-local/docker-compose.yml logs -f legend-engine
 ```
 
 ### Restart Services
 ```bash
 # Restart all
-docker-compose -f deploy/local/docker-compose.yml restart
+docker-compose -f deploy/docker-local/docker-compose.yml restart
 
 # Restart specific service
-docker-compose -f deploy/local/docker-compose.yml restart legend-studio
+docker-compose -f deploy/docker-local/docker-compose.yml restart legend-studio
 ```
 
 ### Stop Services
 ```bash
 # Stop all containers
-docker-compose -f deploy/local/docker-compose.yml down
+docker-compose -f deploy/docker-local/docker-compose.yml down
 
 # Stop and remove volumes (clean slate)
-docker-compose -f deploy/local/docker-compose.yml down -v
+docker-compose -f deploy/docker-local/docker-compose.yml down -v
 ```
 
 ## 🐛 Troubleshooting
@@ -168,9 +168,9 @@ docker network ls
 docker network inspect legend-network
 
 # Recreate network
-docker-compose -f deploy/local/docker-compose.yml down
+docker-compose -f deploy/docker-local/docker-compose.yml down
 docker network rm legend-network
-docker-compose -f deploy/local/docker-compose.yml up -d
+docker-compose -f deploy/docker-local/docker-compose.yml up -d
 ```
 
 ### MongoDB Connection Issues
@@ -191,7 +191,7 @@ The Guardian Agent is built from the root Dockerfile:
 docker build -t legend-guardian:latest .
 
 # Build via docker-compose
-docker-compose -f deploy/local/docker-compose.yml build legend-guardian
+docker-compose -f deploy/docker-local/docker-compose.yml build legend-guardian
 ```
 
 ## 🔄 Migration from Old Structure
@@ -200,7 +200,7 @@ If you were using the old docker-compose.yml in the root:
 
 1. Stop old containers: `docker-compose down`
 2. Remove old volumes if needed: `docker volume prune`
-3. Use new location: `docker-compose -f deploy/local/docker-compose.yml up -d`
+3. Use new location: `docker-compose -f deploy/docker-local/docker-compose.yml up -d`
 
 ## 📝 Notes
 

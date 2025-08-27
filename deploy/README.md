@@ -6,7 +6,7 @@ This directory contains all deployment configurations for FINOS Legend platform.
 
 ```
 deploy/
-├── local/                    # Local development (Docker Compose)
+├── docker-local/            # Docker Compose for local development
 │   ├── docker-compose.yml   # Simple local setup
 │   └── start.sh             # Convenience startup script
 │
@@ -31,9 +31,9 @@ deploy/
 
 ## Quick Start
 
-### Local Development
+### Docker Local Development
 ```bash
-cd deploy/local
+cd deploy/docker-local
 ./start.sh              # Start basic Legend services
 ./start.sh full         # Include Guardian Agent
 ```
@@ -59,6 +59,6 @@ cd deploy/official-finos-docker
 
 ## Deployment Methods
 
-- **local/** - Simplified Docker Compose for quick local development
+- **docker-local/** - Simplified Docker Compose for quick local development
 - **k8s/** - Production-ready Kubernetes manifests
 - **official-finos-docker/** - Official FINOS provided Docker setup (unchanged)
