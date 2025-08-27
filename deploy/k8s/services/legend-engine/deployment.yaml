@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legend-engine
+  namespace: legend
+  labels:
+    app: legend-engine
+    app.kubernetes.io/name: legend-engine
+    app.kubernetes.io/part-of: finos-legend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: legend-engine
+  template:
+    metadata:
+      labels:
+        app: legend-engine
+    spec:
+      containers:
+      - name: legend-engine
+        image: finos/legend-engine-server:4.40.3
+        ports:
+        - containerPort: 6300
+          name: http
+        env:
+        - name: MONGODB_URI
+          value: "mongodb://admin:admin@mongodb:27017/legend?authSource=admin"
+        - name: JAVA_OPTS
+          value: "-Xmx1500m -Xms1000m -XX:+UseG1GC"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /api/server/v1/info
+            port: 6300
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/server/v1/info
+            port: 6300
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: legend-engine
+  namespace: legend
+  labels:
+    app: legend-engine
+spec:
+  selector:
+    app: legend-engine
+  ports:
+  - port: 6300
+    targetPort: 6300
+    name: http

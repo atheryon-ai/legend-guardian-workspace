@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: legend-config
+  namespace: legend
+data:
+  # Common configuration for all Legend services
+  LEGEND_ENGINE_URL: "http://legend-engine:6300"
+  LEGEND_SDLC_URL: "http://legend-sdlc:6100"
+  LEGEND_STUDIO_URL: "http://legend-studio:9000"
+  MONGODB_HOST: "mongodb"
+  MONGODB_PORT: "27017"
+  MONGODB_DATABASE: "legend"

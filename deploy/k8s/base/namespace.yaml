@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: legend
+  labels:
+    name: legend
+    app.kubernetes.io/name: legend
+    app.kubernetes.io/part-of: finos-legend
