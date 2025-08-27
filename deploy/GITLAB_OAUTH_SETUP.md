@@ -36,7 +36,16 @@ GITLAB_APP_ID=dbdd707e51066b5b948d238bb0f84b7a7d2c883e008671c7dc33c1c5c639c862
    - **Application ID**: Long hex string (USE THIS!)
    - **Secret**: Copy this for GITLAB_APP_SECRET
 
-4. Update your `.env` files with these values
+4. Update your `secrets.env` file with these values:
+   ```bash
+   # Copy secrets.example to secrets.env
+   cp secrets.example secrets.env
+   
+   # Edit secrets.env and set:
+   GITLAB_APP_ID=your-application-id-here
+   GITLAB_APP_SECRET=your-secret-here
+   GITLAB_HOST=gitlab.com
+   ```
 
 ## Common Issues
 
@@ -60,7 +69,20 @@ If you use GitHub SSO for GitLab:
 ## Testing
 
 After configuration:
-1. Clear browser cookies for localhost
-2. Navigate to http://localhost:9000
-3. Click "Sign in with GitLab"
-4. Authorize the application when prompted
+1. **Deploy the services**:
+   ```bash
+   cd deploy/docker
+   ./run-legend.sh setup up
+   ./run-legend.sh studio up -d
+   ```
+
+2. **Test authentication**:
+   - Clear browser cookies for localhost
+   - Navigate to http://localhost:9000/studio
+   - Click "Sign in with GitLab"
+   - Authorize the application when prompted
+
+3. **Verify services are running**:
+   ```bash
+   ./run-legend.sh studio ps
+   ```

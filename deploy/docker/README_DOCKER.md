@@ -5,19 +5,31 @@ This directory contains a comprehensive, profile-based Docker Compose setup for 
 ## Prerequisites
 
 *   Docker and Docker Compose
-*   A `.env` file for configuration.
+*   GitLab OAuth credentials configured (see [GitLab OAuth Setup](../../GITLAB_OAUTH_SETUP.md))
+*   Environment variables set in `secrets.env` (see [secrets.example](../../secrets.example))
+*   The `run-legend.sh` script for proper deployment
 
 ## 1. Configuration
 
-This deployment is configured using a `.env` file located in this directory (`deploy/docker/.env`).
+This deployment uses the **official FINOS Legend** configuration approach:
 
-If you do not have one, you can copy the example configuration file:
+### Environment Variables
+- **GitLab OAuth**: Set in `secrets.env` at the repository root
+- **Service Configuration**: Configured in `deploy/docker/.env`
+- **Secrets Management**: Use `secrets.example` as a template
 
-```bash
-cp .env.example .env
-```
+### Required Setup
+1. **Copy secrets.example to secrets.env**:
+   ```bash
+   cp ../../secrets.example ../../secrets.env
+   ```
 
-After creating the file, **review and edit the variables in `.env`**, especially for GitLab integration and any secret keys, to match your environment.
+2. **Configure GitLab OAuth** in `secrets.env`:
+   - `GITLAB_APP_ID`: Your GitLab OAuth application ID
+   - `GITLAB_APP_SECRET`: Your GitLab OAuth application secret
+   - `GITLAB_HOST`: GitLab instance (default: gitlab.com)
+
+3. **Review docker-compose configuration** in `.env` (already configured)
 
 ## 2. First-Time Setup
 
@@ -104,3 +116,64 @@ The following services are included. Ports and other settings are configured in 
 | Legend Query | `legend-query` | `${QUERY_PORT}` | `query` | UI for exploring and querying data. |
 | MongoDB | `legend-mongodb` | `${MONGODB_PORT}` | `engine`, `sdlc`, etc. | Primary database for Legend services. |
 | PostgreSQL | `postgres` | `5432` | `postgres`, `studio`, `query` | Relational database for specific services. |
+
+## 6. Current Deployment Status
+
+### ✅ **Successfully Deployed**
+This deployment is now using the **official FINOS Legend** approach with:
+- **Official docker-compose.yml** - Complete service orchestration
+- **Official setup.sh** - Configuration generation working
+- **GitLab OAuth integration** - Using secrets.env for credentials
+- **Profile-based deployment** - Flexible service combinations
+- **Production-ready configuration** - Health checks, proper dependencies
+
+### 🚀 **Deployment Commands**
+```bash
+# One-time setup (generates configurations)
+./run-legend.sh setup up
+
+# Core Legend Studio stack
+./run-legend.sh studio up -d
+
+# Full Legend stack with Query
+./run-legend.sh query up -d
+
+# Individual services
+./run-legend.sh engine up -d
+./run-legend.sh sdlc up -d
+./run-legend.sh depot up -d
+```
+
+### 🔍 **Service Management**
+```bash
+# Check status
+./run-legend.sh studio ps
+
+# View logs
+./run-legend.sh studio logs -f
+
+# Stop services
+./run-legend.sh studio down
+```
+
+### 🌐 **Access URLs**
+- **Legend Studio**: http://localhost:9000/studio
+- **Legend SDLC**: http://localhost:6100
+- **Legend Engine**: http://localhost:6300
+- **Legend Depot**: http://localhost:6200
+- **Legend Query**: http://localhost:9001/query
+- **MongoDB**: localhost:27017
+- **PostgreSQL**: localhost:5432
+
+## 7. Troubleshooting
+
+### Common Issues
+1. **GitLab OAuth errors**: Ensure secrets.env is properly configured
+2. **Service startup failures**: Check that setup service completed successfully
+3. **Port conflicts**: Verify ports are available in your environment
+4. **Configuration issues**: Run setup service again to regenerate configs
+
+### Getting Help
+- Check service logs: `./run-legend.sh studio logs -f`
+- Verify environment variables: `./run-legend.sh studio config`
+- Review official FINOS documentation: [FINOS Legend](https://github.com/finos/legend)

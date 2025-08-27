@@ -12,15 +12,16 @@ For a detailed list of services, see the [Docker README](deploy/docker/README_DO
 
 ### Prerequisites
 - Docker and Docker Compose
-- A `.env` file configured in `deploy/docker/`. You can copy `deploy/docker/.env.example` to get started.
+- GitLab OAuth credentials (see [GitLab OAuth Setup](deploy/GITLAB_OAUTH_SETUP.md))
+- Environment variables configured (see [secrets.env](secrets.example))
 
 ### 1. Run the One-Time Setup
 
 Generate the necessary configurations for the services.
 
 ```bash
-# From the repository root directory
-docker-compose --profile setup -f deploy/docker/docker-compose.yml up --build
+# From the deploy/docker directory
+./run-legend.sh setup up
 ```
 
 ### 2. Launch the Services
@@ -28,9 +29,10 @@ docker-compose --profile setup -f deploy/docker/docker-compose.yml up --build
 Run the core stack for data modeling.
 
 ```bash
-# From the repository root directory
-docker-compose --profile studio -f deploy/docker/docker-compose.yml up -d --build
+# From the deploy/docker directory
+./run-legend.sh studio up -d
 ```
+
 For more advanced options, including running the full stack, see the detailed instructions in the [Docker README](deploy/docker/README_DOCKER.md).
 
 ## 📁 Project Structure
@@ -38,17 +40,25 @@ For more advanced options, including running the full stack, see the detailed in
 ```
 atheryon-finos-legend/
 ├── deploy/docker/
-│   ├── .env.example         # Example environment configuration
-│   ├── docker-compose.yml   # Main deployment file for the full stack
-│   ├── setup.sh             # Script for the setup container
+│   ├── run-legend.sh        # Main deployment script with secrets integration
+│   ├── docker-compose.yml   # Official FINOS Legend deployment configuration
+│   ├── setup.sh             # Configuration generation script
+│   ├── .env                 # Environment configuration
 │   └── README_DOCKER.md     # Detailed Docker-specific documentation
-├── docs/
+├── secrets.env              # Production secrets (not committed)
+├── secrets.example          # Example secrets configuration
+├── docs/                    # Architecture and deployment documentation
 └── ...
 ```
 
 ## 🔧 Configuration
 
-The deployment is configured using the `.env` file in the `deploy/docker/` directory. See the [Docker README](deploy/docker/README_DOCKER.md) for more details.
+The deployment is configured using:
+- **Environment variables** in `secrets.env` (GitLab OAuth, database connections)
+- **Docker configuration** in `deploy/docker/.env` (service ports, versions)
+- **Official FINOS Legend** docker-compose.yml with profile-based deployment
+
+See the [Docker README](deploy/docker/README_DOCKER.md) and [GitLab OAuth Setup](deploy/GITLAB_OAUTH_SETUP.md) for detailed configuration instructions.
 
 ## 📚 Documentation
 

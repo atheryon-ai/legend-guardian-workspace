@@ -17,12 +17,14 @@ cd deploy
 cd kubernetes
 ./deploy-all.sh
 
-# Docker deployment
+# Docker deployment (Official FINOS Legend)
 cd docker
-docker-compose up -d
+./run-legend.sh studio up -d
 
-# Or build from source (advanced)
-./build-legend-local.sh
+# For other profiles:
+./run-legend.sh setup up        # One-time setup
+./run-legend.sh query up -d     # Full stack
+./run-legend.sh engine up -d    # Engine only
 
 # Azure deployment
 cd azure
@@ -87,17 +89,14 @@ deploy/
 │   ├── deploy-azure.bash     # Azure infrastructure deployment
 │   ├── build-and-push-images.sh # Docker image management
 │   └── process-k8s-manifests.sh # Manifest processing
-├── docker/                    # Docker endpoint
-│   ├── components/            # All components for Docker
-│   │   ├── engine/           # Legend Engine
-│   │   │   └── Dockerfile.engine
-│   │   ├── sdlc/             # Legend SDLC
-│   │   │   └── Dockerfile.sdlc
-│   │   ├── studio/           # Legend Studio
-│   │   │   └── Dockerfile.studio
-│   │   └── guardian/         # Guardian Agent
-│   │       └── Dockerfile
-│   ├── docker-compose.yml    # Development environment
+├── docker/                    # Docker endpoint (Official FINOS Legend)
+│   ├── run-legend.sh         # Main deployment script with secrets integration
+│   ├── docker-compose.yml    # Official FINOS Legend deployment
+│   ├── setup.sh              # Configuration generation script
+│   ├── .env                  # Service configuration
+│   ├── engine/config/        # Engine configuration files
+│   ├── depot-store/config/   # Depot store configuration
+│   └── README_DOCKER.md      # Docker deployment documentation
 │   ├── docker-compose.prod.yml # Production environment
 │   ├── .dockerignore         # Docker build optimization
 │   └── README_DOCKER.md      # Docker documentation
