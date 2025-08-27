@@ -2,258 +2,265 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CRITICAL DEPLOYMENT PRINCIPLE
+
+**USE ONLY OPEN SOURCE FINOS LEGEND COMPONENTS WITH OUT-OF-THE-BOX CONFIGURATION**
+
+This project focuses exclusively on deploying the official FINOS Legend platform using:
+- Official FINOS Docker images from Docker Hub (finos/legend-*)
+- Standard configuration files from FINOS Legend repositories
+- Out-of-the-box deployment patterns from FINOS documentation
+- No custom modifications to core Legend services
+
+When in doubt, always refer to:
+1. Official FINOS Legend repositories on GitHub
+2. FINOS Legend Docker Hub images
+3. Standard Legend configuration examples
+
 ## Project Overview
 
-Legend Guardian Agent - A single intelligent agent that monitors and manages the FINOS Legend platform, providing automated model validation, service generation, and deployment automation.
+Deployment and management of the open source FINOS Legend platform with minimal customization. The goal is to run Legend as close to the official distribution as possible.
+
+## Official FINOS Legend Components
+
+Use ONLY these official Docker images:
+- `finos/legend-engine-server:latest` - Engine service (port 6060)
+- `finos/legend-sdlc-server:latest` - SDLC service (port 6100/6101)
+- `finos/legend-studio:latest` - Studio UI (port 9000)
+- `finos/legend-depot-server:latest` - Depot service (port 6200)
+- `finos/legend-depot-store-server:latest` - Depot store service
+- Standard databases: MongoDB, PostgreSQL as per FINOS examples
+
+## Standard Configuration Approach
+
+### Use Official Config Templates
+Always start with configuration from official FINOS repositories:
+- Engine config: https://github.com/finos/legend-engine/tree/master/legend-engine-config
+- SDLC config: https://github.com/finos/legend-sdlc/tree/master/legend-sdlc-server/src/test/resources
+- Studio config: https://github.com/finos/legend-studio/tree/master/packages/legend-application-studio-bootstrap
+
+### Minimal Configuration Changes
+Only modify:
+- Database connection strings (MongoDB/PostgreSQL endpoints)
+- Service URLs for inter-service communication
+- Port mappings if required by environment
+- Authentication settings (GitLab OAuth)
+
+### Docker Compose Structure
+```yaml
+services:
+  # Use official FINOS images
+  legend-engine:
+    image: finos/legend-engine-server:latest
+    # Mount official config
+    volumes:
+      - ./config/engine-config.json:/config/config.json
+    # Standard ports
+    ports:
+      - "6060:6060"
+  
+  # Similar for other services...
+```
 
 ## Development Commands
 
-### Setup and Installation
+### Running with Docker Compose
 ```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+# Use official FINOS docker-compose examples as base
+cd deploy/docker
+docker-compose -f docker-compose.yml up
 
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment (create .env file with required variables)
-cp deploy/base.env .env  # Start with base configuration
-# Edit .env with your specific values
+# No custom build scripts - use official images
+docker pull finos/legend-engine-server:latest
+docker pull finos/legend-sdlc-server:latest
+docker pull finos/legend-studio:latest
 ```
 
-### Running the Application
+### Configuration Management
 ```bash
-# Local development with hot reload
-python main.py
+# Copy official configs
+wget https://raw.githubusercontent.com/finos/legend-engine/master/legend-engine-config/engine-config.json
+wget https://raw.githubusercontent.com/finos/legend-sdlc/master/legend-sdlc-server/src/test/resources/config-test.yaml
 
-# Docker standalone
-docker build -t legend-guardian-agent .
-docker run -p 8000:8000 --env-file .env legend-guardian-agent
-
-# Full platform with Docker Compose (includes all Legend services)
-cd deploy/local
-./start.sh
+# Modify only connection strings
+sed -i 's/localhost:27017/mongodb:27017/g' engine-config.json
 ```
 
-### Testing
-```bash
-# Run all tests
-pytest tests/ -v
+## DO NOT CREATE
 
-# Run with coverage
-pytest tests/ --cov=src --cov-report=html
+- Custom Dockerfiles for Legend services (use official images)
+- Modified Legend service code
+- Custom configuration formats
+- Non-standard deployment patterns
+- Guardian agents or monitoring services (unless specifically requested)
 
-# Run specific test file
-pytest tests/test_agent.py -v
+## Configuration Files Location
 
-# Run specific test
-pytest tests/test_agent.py::TestGuardianAgent::test_analyze -v
-```
-
-### Code Quality
-```bash
-# Format code with Black
-black src/ tests/
-
-# Check code style  
-flake8 src/ tests/
-
-# Run both formatting and linting
-black src/ tests/ && flake8 src/ tests/
-```
-
-### Deployment
-```bash
-# Deploy entire Legend platform (K8s)
-cd deploy
-./deploy-all.sh deploy
-
-# Deploy only Guardian Agent
-cd deploy/legend-guardian
-./deploy.sh deploy
-
-# Azure deployment with ACR
-cd deploy/azure
-./build-and-push-images.sh
-./deploy.sh
-
-# Validate deployment
-cd deploy
-./deploy-all.sh validate
-```
-
-## Architecture Overview
-
-The system follows a layered microservice architecture with a central Guardian Agent:
-
-### Core Flow
-1. **Event Reception**: FastAPI endpoint receives model change events
-2. **Analysis**: Guardian Agent analyzes the change and determines impact level (low/medium/high/critical)
-3. **Action Planning**: Creates automated action plans based on change analysis
-4. **Execution**: Executes plans through Legend Engine/SDLC clients
-5. **Memory Storage**: Stores all interactions for audit and learning
-
-### Key Components
-
-**Guardian Agent** (`src/agent/guardian_agent.py`)
-- Central orchestrator handling the 4-step process (analyze → plan → execute → store)
-- Integrates with Legend platform services
-- Maintains decision history in memory system
-
-**API Layer** (`src/api/main.py`)
-- FastAPI application exposing REST endpoints
-- Bearer token authentication with configurable API keys
-- Main endpoints: `/api/v1/model/change`, `/api/v1/model/validate`, `/api/v1/system/status`
-
-**Legend Clients** (`src/agent/clients/`)
-- `legend_engine.py`: Interfaces with Legend Engine (port 6060)
-- `legend_sdlc.py`: Interfaces with Legend SDLC (port 7070)
-- Both use aiohttp for async HTTP communication
-
-**Memory System** (`src/agent/memory.py`)
-- Stores analyses, plans, and results
-- Automatic cleanup (keeps last 1000 entries)
-- Provides history retrieval by event type
-
-**Configuration** (`src/config/settings.py`)
-- Pydantic BaseSettings with environment variable loading
-- All config uses `LEGEND_` prefix
-- Supports .env files for local development
-
-## Environment Configuration
-
-Configuration is managed through modular environment files in `deploy/`:
-- `base.env`: Core configuration shared across all environments
-- `deploy/local/local.env`: Local development overrides
-- `deploy/azure/azure.env`: Azure-specific configuration
-
-Required environment variables:
-```bash
-# Legend Platform endpoints
-LEGEND_ENGINE_URL=http://legend-engine:6060  # K8s service name or external URL
-LEGEND_SDLC_URL=http://legend-sdlc:7070
-LEGEND_STUDIO_URL=http://legend-studio:9000
-LEGEND_API_KEY=your-legend-api-key
-
-# API Configuration
-LEGEND_API_HOST=0.0.0.0
-LEGEND_API_PORT=8000
-LEGEND_API_DEBUG=false
-
-# Security
-VALID_API_KEYS=key1,key2,key3  # Comma-separated list
-
-# Database
-MONGODB_URI=mongodb://mongodb:27017
-MONGODB_DATABASE=legend
-
-# Logging
-LEGEND_LOG_LEVEL=INFO
-```
-
-## Testing Strategy
-
-- Unit tests in `tests/` directory using pytest
-- Test models, memory system, and core functionality
-- No integration tests currently - Legend services must be mocked
-- Tests use pytest-asyncio for async functionality
-
-## Deployment Architecture
-
-The deployment system uses a modular architecture in `deploy/`:
-
+Standard FINOS configuration structure:
 ```
 deploy/
-├── deploy-all.sh          # Master deployment orchestrator
-├── validate-config.sh     # Configuration validation
-├── lib/
-│   └── common-functions.sh # Shared deployment functions
-├── legend-engine/         # Engine service deployment
-├── legend-sdlc/           # SDLC service deployment  
-├── legend-studio/         # Studio UI deployment
-├── legend-guardian/       # Guardian agent deployment
-├── mongodb/               # Database deployment
-├── local/                 # Local Docker Compose setup
-├── azure/                 # Azure AKS deployment scripts
-└── k8s/                   # Base Kubernetes manifests
+├── docker/
+│   ├── docker-compose.yml          # Official FINOS compose structure
+│   └── config/
+│       ├── engine-config.json      # From FINOS legend-engine repo
+│       ├── sdlc-config.yaml        # From FINOS legend-sdlc repo
+│       └── studio-config.json      # From FINOS legend-studio repo
+└── kubernetes/
+    └── # Standard K8s manifests using FINOS images
 ```
 
-### Deployment Targets
+## Debugging Approach
 
-**Local Development**: Docker Compose with all services
-- Run: `cd deploy/local && ./start.sh`
-- Services available on localhost ports
+When services fail:
+1. Check official FINOS documentation first
+2. Review example configurations in FINOS repos
+3. Verify using correct official image versions
+4. Ensure configuration matches FINOS examples
+5. Check FINOS GitHub issues for known problems
 
-**Kubernetes (Production)**: Modular service deployment
-- Full platform: `./deploy-all.sh deploy`
-- Individual service: `./legend-guardian/deploy.sh deploy`
-- Resource limits: 512Mi-1Gi RAM, 250m-500m CPU
+## Testing
 
-**Azure AKS**: Production deployment with ACR
-- Resource group: `rs-finos-legend`
-- Uses Azure Container Registry for images
-- Automated via GitHub Actions (when configured)
-
-## API Authentication
-
-All API endpoints (except `/health` and `/`) require Bearer token authentication:
+Test that services match official FINOS behavior:
 ```bash
-curl -H "Authorization: Bearer your-api-key" http://localhost:8000/api/v1/model/change
+# Verify standard endpoints
+curl http://localhost:6060/api/server/v1/info  # Engine
+curl http://localhost:6100/api/info            # SDLC
+curl http://localhost:9000                     # Studio
+
+# Compare responses with FINOS documentation
 ```
 
 ## Important Patterns
 
-1. **Async Operations**: Legend clients use aiohttp for non-blocking I/O
-2. **Error Handling**: Comprehensive try-catch blocks with structured logging
-3. **Memory Management**: Automatic cleanup prevents unbounded growth
-4. **Configuration**: Environment-based with Pydantic validation
-5. **Security**: Non-root Docker user, API key authentication, no hardcoded secrets
+1. **Always use official images**: Never build custom Legend service images
+2. **Minimal configuration**: Start with FINOS defaults, change only what's necessary
+3. **Standard ports**: Use FINOS standard ports (6060, 6100, 9000, etc.)
+4. **Official documentation**: Refer to FINOS repos, not third-party guides
+5. **No custom code**: Deploy Legend as-is from official distribution
 
-## Key Development Patterns
+## References
 
-### Adding New Agent Capabilities
-1. Extend `AgentCapability` enum in `src/agent/models.py`
-2. Add handler method in `GuardianAgent` class (`src/agent/guardian_agent.py`)
-3. Update API endpoint if needed in `src/api/main.py`
-4. Add corresponding tests in `tests/`
-5. Run tests to verify: `pytest tests/ -v`
+Official FINOS Legend repositories:
+- Engine: https://github.com/finos/legend-engine
+- SDLC: https://github.com/finos/legend-sdlc
+- Studio: https://github.com/finos/legend-studio
+- Depot: https://github.com/finos/legend-depot
 
-### Modifying Legend Integration
-- Legend Engine client: `src/agent/clients/legend_engine.py`
-- Legend SDLC client: `src/agent/clients/legend_sdlc.py`
-- Both use aiohttp for async HTTP communication
-- Follow existing error handling patterns with try-catch blocks
+Docker Hub:
+- https://hub.docker.com/u/finos
 
-### Updating API Endpoints
-1. Add route in `src/api/main.py`
-2. Create request/response models in `src/api/models.py`
-3. Implement business logic in Guardian Agent
-4. Add authentication via `Depends(get_current_user)`
-5. Update OpenAPI docs will auto-generate at `/docs`
+## 🎯 **OFFICIAL DEPLOYMENT TOOLS DISCOVERED**
 
-### Deployment Configuration Updates
-1. Modify base configuration in `deploy/base.env`
-2. Add environment-specific overrides in respective directories
-3. Validate configuration: `./deploy/validate-config.sh`
-4. Test locally first: `cd deploy/local && ./start.sh`
+### **Official Docker Compose Setup**
+The FINOS Legend project provides **official, production-ready deployment tools** at:
+- **Main installer**: https://github.com/finos/legend/tree/master/installers/docker-compose
+- **Official docker-compose.yml**: https://raw.githubusercontent.com/finos/legend/master/installers/docker-compose/docker-compose.yml
+- **Official .env template**: https://raw.githubusercontent.com/finos/legend/master/installers/docker-compose/.env
+- **Official README**: https://raw.githubusercontent.com/finos/legend/master/installers/docker-compose/README.md
 
-### Commit and Pull Request Guidelines
+### **Official Helm Charts**
+- **Kubernetes deployment**: https://github.com/finos/legend/tree/master/installers/helm-ocp
+- **Production-ready K8s manifests**
 
-#### Commit Messages
-- Use concise, imperative mood (e.g., "Add validation", "Fix memory leak", "Update dependencies")
-- Include scope in subject when relevant: "feat: Add model validation endpoint"
-- Keep subject line under 50 characters
-- Add body for complex changes explaining the "why"
+### **What This Means**
+1. **NO NEED for custom Docker configurations** - Official ones exist
+2. **NO NEED for custom docker-compose.yml** - Official one is comprehensive
+3. **NO NEED for custom build scripts** - Official setup handles everything
+4. **The current custom implementation is completely unnecessary**
 
-#### Pull Requests
-- Include clear description of changes
-- Link related issues with "Fixes #123" or "Relates to #456"
-- Include test results and coverage
-- Update documentation and diagrams when UI/API changes
-- Run quality checks before opening PR:
-  ```bash
-  black src/ tests/
-  flake8 src/ tests/
-  pytest tests/ -v
-  ```
+### **Official vs. Custom Comparison**
+
+| Feature | Official FINOS | Current Custom |
+|---------|----------------|----------------|
+| Docker Compose | ✅ Complete, tested | ❌ Basic, problematic |
+| Configuration | ✅ Comprehensive | ❌ Minimal, conflicting |
+| Health Checks | ✅ Proper intervals | ❌ Basic setup |
+| Service Dependencies | ✅ Correct order | ❌ Missing setup service |
+| Environment Variables | ✅ Complete template | ❌ Incomplete |
+| Documentation | ✅ Detailed guide | ❌ Basic notes |
+| Testing | ✅ Production tested | ❌ Untested |
+
+### **Immediate Action Required**
+**Replace the custom deployment with the official FINOS tools:**
+1. Delete custom `docker-compose.yml`
+2. Delete custom Dockerfiles
+3. Use official FINOS docker-compose setup
+4. Follow official deployment guide
+5. Use official configuration templates
+
+## Deployment Philosophy
+
+The goal is to run Legend exactly as FINOS intends, using their official images and configurations. Any customization should be limited to environment-specific settings (URLs, passwords) rather than functional changes.
+
+When asked to deploy or configure Legend:
+1. Use official FINOS Docker images
+2. Use configuration examples from FINOS repositories
+3. Make minimal changes for environment adaptation
+4. Document any deviations from standard FINOS setup
+5. Prefer simplicity and standard patterns over custom solutions
+
+## 🤖 AI ASSISTANT INSTRUCTIONS - OPEN SOURCE ONLY
+
+### 🚫 **ABSOLUTE RULE: NO CUSTOM CODE OR CONFIGURATIONS**
+
+**You are FORBIDDEN from creating, writing, or suggesting ANY custom code, configurations, or modifications. You must ONLY use official open source solutions exactly as they are provided.**
+
+### 📋 **MANDATORY WORKFLOW**
+
+1. **ALWAYS CHECK OFFICIAL SOURCES FIRST**
+   - Search the official project repository
+   - Check official documentation
+   - Look for official deployment tools
+   - Verify official configuration examples
+
+2. **NEVER CREATE CUSTOM FILES**
+   - Writing custom Dockerfiles
+   - Creating custom docker-compose.yml
+   - Writing custom configuration files
+   - Suggesting custom scripts
+   - Modifying existing open source code
+
+3. **ONLY USE OFFICIAL TOOLS**
+   - Official Docker images (exact tags)
+   - Official Helm charts
+   - Official configuration examples
+   - Official deployment guides
+   - Official scripts and tools
+
+### ❌ **WHAT YOU CANNOT DO**
+- ❌ Write custom code
+- ❌ Modify existing configurations
+- ❌ Create new files from scratch
+- ❌ Suggest custom solutions
+- ❌ "Improve" or "optimize" existing code
+- ❌ Create workarounds
+- ❌ Suggest custom modifications
+
+### ✅ **WHAT YOU MUST DO**
+- ✅ Find official solutions
+- ✅ Use official tools
+- ✅ Copy official configurations exactly
+- ✅ Reference official documentation
+- ✅ Point to official repositories
+- ✅ Suggest official alternatives
+
+### 🚨 **ENFORCEMENT**
+
+If you cannot find an official solution:
+1. **STOP immediately**
+2. **Inform the user that no official solution exists**
+3. **Suggest they check the official project**
+4. **DO NOT create a custom solution**
+5. **Ask them to contribute to the official project instead**
+
+### 🔒 **FINAL WARNING**
+
+**Remember: You are an AI assistant helping with open source projects. Your job is to find and use official solutions, NOT to create custom ones. If you cannot find an official solution, you must say so and NOT create a custom alternative.**
+
+### 📝 **DOCUMENTATION RULE**
+
+**ALWAYS TRY TO ADD NEW INFO TO EXISTING .MD FILES AND NOT CREATE NEW ONES.**
+- Update existing documentation files
+- Add new sections to relevant existing files
+- Consolidate information rather than creating new files
+- Keep the repository structure clean and organized
