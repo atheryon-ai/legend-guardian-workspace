@@ -1,0 +1,49 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base k8s manifests to build upon
+resources:
+  - ../../k8s
+
+# Azure-specific namespace
+namespace: legend
+
+# Azure-specific labels
+commonLabels:
+  app.kubernetes.io/environment: azure
+  app.kubernetes.io/managed-by: kustomize
+
+# Strategic merge patches for resource optimization
+patchesStrategicMerge:
+  - engine-patch.yaml
+  - studio-patch.yaml
+  - sdlc-patch.yaml
+  - mongodb-patch.yaml
+
+# Additional Azure-specific resources (beyond base)
+resources:
+  - resource-quota.yaml
+  - ingress.yaml
+  - hpa.yaml
+
+# ConfigMap for Azure-specific environment variables
+configMapGenerator:
+  - name: azure-env-config
+    literals:
+      - ENVIRONMENT=azure
+      - CLUSTER_TYPE=aks
+      - JAVA_OPTS=-Xms512m -Xmx768m -XX:MaxRAMPercentage=75.0
+
+# Note: OAuth secret is created by deploy.sh script
+# to avoid storing credentials in version control
+
+# Image tags (can be overridden per environment)
+images:
+  - name: finos/legend-engine-server
+    newTag: 4.40.3
+  - name: finos/legend-sdlc-server
+    newTag: 0.195.0
+  - name: finos/legend-studio
+    newTag: 13.113.0
+  - name: mongo
+    newTag: 7.0

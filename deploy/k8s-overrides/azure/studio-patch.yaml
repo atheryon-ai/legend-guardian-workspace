@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legend-studio
+spec:
+  template:
+    spec:
+      containers:
+      - name: legend-studio
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: ENGINE_URL
+          value: "http://legend-engine:6300"
+        - name: SDLC_URL
+          value: "http://legend-sdlc:6100"

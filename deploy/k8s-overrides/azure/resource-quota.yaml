@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: legend-quota
+spec:
+  hard:
+    requests.cpu: "3"      # Half of cluster capacity for safety
+    requests.memory: "12Gi" # Half of cluster memory
+    limits.cpu: "4"
+    limits.memory: "16Gi"

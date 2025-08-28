@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: legend-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+spec:
+  rules:
+  - host: legend-studio.azure-legend.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: legend-studio
+            port:
+              number: 9000
+  - host: legend-engine.azure-legend.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: legend-engine
+            port:
+              number: 6300
+  - host: legend-sdlc.azure-legend.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: legend-sdlc
+            port:
+              number: 6100
+  tls:
+  - hosts:
+    - legend-studio.azure-legend.com
+    - legend-engine.azure-legend.com
+    - legend-sdlc.azure-legend.com
+    secretName: legend-tls
