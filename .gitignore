@@ -108,3 +108,7 @@ celerybeat.pid
 .mypy_cache/
 .dmypy.json
 dmypy.json
+secrets.env.backup
+.env.docker
+.env.azure
+.env.k8s

@@ -6,7 +6,7 @@ This directory contains a comprehensive, profile-based Docker Compose setup for 
 
 *   Docker and Docker Compose
 *   GitLab OAuth credentials configured (see [GitLab OAuth Setup](../../GITLAB_OAUTH_SETUP.md))
-*   Environment variables set in `secrets.env` (see [secrets.example](../../secrets.example))
+*   Environment variables set in `.env.local` or `.env.docker` (see [Secrets Guide](../secrets/README.md))
 *   The `run-legend.sh` script for proper deployment
 
 ## 1. Configuration
@@ -19,12 +19,13 @@ This deployment uses the **official FINOS Legend** configuration approach:
 - **Secrets Management**: Use `secrets.example` as a template
 
 ### Required Setup
-1. **Copy secrets.example to secrets.env**:
+1. **Configure your environment**:
    ```bash
-   cp ../../secrets.example ../../secrets.env
+   # Run the interactive setup
+   ../secrets/setup.sh --env docker --interactive
    ```
 
-2. **Configure GitLab OAuth** in `secrets.env`:
+2. **Configure GitLab OAuth** in `.env.docker`:
    - `GITLAB_APP_ID`: Your GitLab OAuth application ID
    - `GITLAB_APP_SECRET`: Your GitLab OAuth application secret
    - `GITLAB_HOST`: GitLab instance (default: gitlab.com)
@@ -168,7 +169,7 @@ This deployment is now using the **official FINOS Legend** approach with:
 ## 7. Troubleshooting
 
 ### Common Issues
-1. **GitLab OAuth errors**: Ensure secrets.env is properly configured
+1. **GitLab OAuth errors**: Ensure .env.docker is properly configured
 2. **Service startup failures**: Check that setup service completed successfully
 3. **Port conflicts**: Verify ports are available in your environment
 4. **Configuration issues**: Run setup service again to regenerate configs

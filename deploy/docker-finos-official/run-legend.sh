@@ -8,9 +8,16 @@ set -e
 echo "🚀 Starting FINOS Legend deployment..."
 
 # Source the secrets file from the root directory
-SECRETS_FILE="../../secrets.env"
-if [ ! -f "$SECRETS_FILE" ]; then
-    echo "❌ Error: secrets.env not found at $SECRETS_FILE"
+# Try multiple possible locations for backward compatibility
+if [ -f "../../.env.local" ]; then
+    SECRETS_FILE="../../.env.local"
+elif [ -f "../../.env.docker" ]; then
+    SECRETS_FILE="../../.env.docker"
+elif [ -f "../../secrets.env" ]; then
+    SECRETS_FILE="../../secrets.env"
+else
+    echo "❌ Error: No secrets file found (.env.local, .env.docker, or secrets.env)"
+    echo "   Please run: deploy/secrets/setup.sh --env local"
     exit 1
 fi
 

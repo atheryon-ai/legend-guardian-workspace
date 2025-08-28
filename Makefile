@@ -14,18 +14,18 @@ install: ## Install dependencies (not needed for Docker deployment)
 	@echo "Use 'make docker-compose' to deploy Legend platform"
 
 docker-build: ## Build Legend platform Docker images
-	cd deploy/docker && docker-compose build
+	cd deploy/docker-finos-official && docker-compose build
 
 docker-compose: ## Deploy Legend platform with Docker Compose
-	cd deploy/docker && docker-compose up -d
+	cd deploy/docker-finos-official && ./run-legend.sh studio up -d
 
 docker-compose-down: ## Stop Legend platform services
-	cd deploy/docker && docker-compose down
+	cd deploy/docker-finos-official && ./run-legend.sh studio down
 
 docker-compose-logs: ## View Legend platform logs
-	cd deploy/docker && docker-compose logs -f
+	cd deploy/docker-finos-official && ./run-legend.sh studio logs -f
 
 clean: ## Clean up Docker resources
-	cd deploy/docker && docker-compose down -v
+	cd deploy/docker-finos-official && ./run-legend.sh studio down -v
 	docker system prune -f
 

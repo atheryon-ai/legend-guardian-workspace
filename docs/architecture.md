@@ -6,54 +6,79 @@ This project provides a clean, focused deployment of the FINOS Legend platform u
 
 ## 🏗️ System Architecture
 
-### High-Level Architecture
+### High-Level Architecture (Full Stack)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Atheryon FINOS Legend                   │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │   Legend       │  │   Legend        │  │   Legend        │ │
-│  │   Engine       │  │   SDLC          │  │   Studio        │ │
-│  │  (Port 6300)   │  │  (Port 6100)    │  │  (Port 9000)    │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │                    MongoDB                             │ │
-│  │                   (Port 27017)                         │ │
-│  └─────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Atheryon FINOS Legend Platform                    │
+├─────────────────────────────────────────────────────────────────────┤
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
+│  │   Legend     │  │   Legend     │  │   Legend     │  │   Legend     │ │
+│  │   Studio     │  │   Query      │  │   SDLC       │  │   Depot      │ │
+│  │  (Port 9000) │  │  (Port 9001) │  │  (Port 6100) │  │  (Port 6200) │ │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘ │
+├─────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────────────────────────────┐ │
+│  │                    Legend Engine (Port 6300)                    │ │
+│  │               Core Execution and Model Processing               │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+├─────────────────────────────────────────────────────────────────────┤
+│  ┌──────────────────────────┐  ┌──────────────────────────────────┐ │
+│  │      MongoDB (27017)      │  │      PostgreSQL (5432)          │ │
+│  │    Primary Database       │  │    Additional Storage           │ │
+│  └──────────────────────────┘  └──────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Service Dependencies
 
 ```
-MongoDB (27017)
+Setup Service (One-time configuration generation)
+  └── Generates configs for all services
+
+MongoDB (27017) + PostgreSQL (5432)
   ├── Legend Engine (6300)
-  │   └── Legend Studio (9000)
+  │   ├── Legend Studio (9000)
+  │   ├── Legend Query (9001)
+  │   └── Legend Depot (6200)
   └── Legend SDLC (6100)
       ├── Legend Studio (9000)
-      └── Legend Engine (6300)
+      └── GitLab Integration
 ```
 
 ## 🐳 Docker Architecture
 
-### Container Structure
+### Container Structure (Official FINOS Deployment)
 
 ```
-deploy/docker/
-├── components/           # Legend service components
-│   ├── engine/          # Legend Engine
-│   │   └── Dockerfile.engine
-│   ├── sdlc/            # Legend SDLC  
-│   │   └── Dockerfile.sdlc
-│   └── studio/          # Legend Studio
-│       └── Dockerfile.studio
-├── config/              # Configuration files
-│   ├── engine-config.yml
-│   └── sdlc-config.yml
-└── docker-compose.yml   # Main deployment file
+deploy/docker-finos-official/
+├── docker-compose.yml    # Official FINOS compose file
+├── run-legend.sh        # Main deployment script
+├── setup.sh            # Configuration generator
+├── .env               # Service configuration
+├── z_generated/       # Auto-generated configs
+│   ├── engine/
+│   │   └── config/
+│   ├── sdlc/
+│   │   └── config/
+│   ├── depot/
+│   │   └── config/
+│   └── depot-store/
+│       └── config/
+└── depot-store/       # Depot store setup
+    ├── config/
+    └── setup/
 ```
+
+### Docker Compose Profiles
+
+- **setup**: One-time configuration generation
+- **engine**: Legend Engine service only
+- **sdlc**: Legend SDLC service only
+- **studio**: Core modeling stack (Engine + SDLC + Studio + MongoDB)
+- **depot**: Model repository services
+- **query**: Full stack including data exploration
+- **postgres**: PostgreSQL database support
 
 ### Network Architecture
 
@@ -95,19 +120,29 @@ healthcheck:
 
 ## 🚀 Deployment Architecture
 
-### Single Command Deployment
+### Profile-Based Deployment
 
 ```bash
-cd deploy/docker
-docker-compose up -d
+cd deploy/docker-finos-official
+
+# One-time setup
+./run-legend.sh setup up
+
+# Deploy different profiles
+./run-legend.sh studio up -d    # Core modeling stack
+./run-legend.sh query up -d     # Full stack with Query
+./run-legend.sh engine up -d    # Engine only
 ```
 
 ### Service Startup Order
 
-1. **MongoDB** - Database backend
-2. **Legend Engine** - Model execution engine
-3. **Legend SDLC** - Source control (depends on Engine)
-4. **Legend Studio** - Web interface (depends on Engine & SDLC)
+1. **Setup** - Generate configurations (one-time)
+2. **MongoDB/PostgreSQL** - Database backends
+3. **Legend Engine** - Model execution engine
+4. **Legend SDLC** - Source control (depends on Engine)
+5. **Legend Studio** - Web interface (depends on Engine & SDLC)
+6. **Legend Depot** - Model repository (optional)
+7. **Legend Query** - Data exploration (optional)
 
 ## 🔒 Security Architecture
 
@@ -119,9 +154,11 @@ docker-compose up -d
 
 ### Data Security
 
-- **MongoDB**: No authentication by default (development setup)
+- **MongoDB**: Authentication enabled (admin/admin by default)
+- **GitLab OAuth**: Required for all services
 - **Service Communication**: Internal network communication only
-- **Configuration**: Mounted from host filesystem
+- **Configuration**: Generated by setup service, stored in z_generated/
+- **Secrets**: Managed via secrets.env file (gitignored)
 
 ## 📈 Scalability Considerations
 
@@ -163,14 +200,15 @@ docker-compose up -d
 ### Service Updates
 
 ```bash
-# Rebuild and restart specific service
-docker-compose build legend-engine
-docker-compose up -d legend-engine
+# Pull latest official images
+docker pull finos/legend-engine-server:latest
+docker pull finos/legend-sdlc-server:latest
+docker pull finos/legend-studio:latest
 
-# Update all services
-docker-compose down
-docker-compose build
-docker-compose up -d
+# Restart with new images
+cd deploy/docker-finos-official
+./run-legend.sh studio down
+./run-legend.sh studio up -d
 ```
 
 ### Configuration Updates

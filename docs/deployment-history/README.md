@@ -1,6 +1,12 @@
-# Azure Legend Platform Deployment
+# Deployment History - Azure Legend Platform
 
-This directory contains the complete Azure deployment configuration for the FINOS Legend platform, now using a centralized environment variable system for easy configuration management.
+**NOTE: This documentation is historical and represents a previous Azure deployment approach. The current project focuses on Docker-based deployments using the official FINOS Legend Docker Compose setup.**
+
+---
+
+## Historical Azure Deployment Documentation
+
+This directory previously contained the complete Azure deployment configuration for the FINOS Legend platform, using a centralized environment variable system for configuration management.
 
 ## 🚀 Quick Start
 

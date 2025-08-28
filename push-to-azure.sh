@@ -23,9 +23,20 @@ print_success() {
     echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
 
-# Configuration
-ACR_NAME="legendacr"
-RESOURCE_GROUP="rs-finos-legend"
+# Load configuration from environment
+if [ -f ".env.azure" ]; then
+    source .env.azure
+elif [ -f ".env.local" ]; then
+    source .env.local
+else
+    echo "No environment file found (.env.azure or .env.local)"
+    echo "Please run: deploy/secrets/setup.sh --env azure"
+    exit 1
+fi
+
+# Use environment variables or defaults
+ACR_NAME="${AZURE_ACR_NAME:-legendacr}"
+RESOURCE_GROUP="${AZURE_RESOURCE_GROUP:-rs-finos-legend}"
 
 # Check if logged into Azure
 print_status "Checking Azure login..."

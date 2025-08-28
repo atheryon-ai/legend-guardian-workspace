@@ -64,26 +64,39 @@ services:
 
 ## Development Commands
 
-### Running with Docker Compose
-```bash
-# Use official FINOS docker-compose examples as base
-cd deploy/docker
-docker-compose -f docker-compose.yml up
+### Primary Deployment Script
+All deployments use the `run-legend.sh` script from `deploy/docker-finos-official/`:
 
-# No custom build scripts - use official images
-docker pull finos/legend-engine-server:latest
-docker pull finos/legend-sdlc-server:latest
-docker pull finos/legend-studio:latest
+```bash
+# One-time setup (generates configurations)
+cd deploy/docker-finos-official
+./run-legend.sh setup up
+
+# Core Legend Studio stack (Studio, SDLC, Engine, MongoDB)
+./run-legend.sh studio up -d
+
+# Full Legend stack with Query
+./run-legend.sh query up -d
+
+# Individual services
+./run-legend.sh engine up -d
+./run-legend.sh sdlc up -d
+./run-legend.sh depot up -d
+
+# Service management
+./run-legend.sh studio ps          # Check status
+./run-legend.sh studio logs -f     # View logs
+./run-legend.sh studio down        # Stop services
 ```
 
-### Configuration Management
+### Environment Setup
 ```bash
-# Copy official configs
-wget https://raw.githubusercontent.com/finos/legend-engine/master/legend-engine-config/engine-config.json
-wget https://raw.githubusercontent.com/finos/legend-sdlc/master/legend-sdlc-server/src/test/resources/config-test.yaml
+# Configure secrets (GitLab OAuth required)
+cp .env.example secrets.env
+nano secrets.env  # Add GITLAB_APP_ID and GITLAB_APP_SECRET
 
-# Modify only connection strings
-sed -i 's/localhost:27017/mongodb:27017/g' engine-config.json
+# Run interactive setup
+deploy/secrets/setup.sh --env docker --interactive
 ```
 
 ## DO NOT CREATE
@@ -99,14 +112,18 @@ sed -i 's/localhost:27017/mongodb:27017/g' engine-config.json
 Standard FINOS configuration structure:
 ```
 deploy/
-├── docker/
-│   ├── docker-compose.yml          # Official FINOS compose structure
-│   └── config/
-│       ├── engine-config.json      # From FINOS legend-engine repo
-│       ├── sdlc-config.yaml        # From FINOS legend-sdlc repo
-│       └── studio-config.json      # From FINOS legend-studio repo
-└── kubernetes/
-    └── # Standard K8s manifests using FINOS images
+├── docker-finos-official/           # Official FINOS Legend deployment
+│   ├── docker-compose.yml          # Complete official compose file
+│   ├── run-legend.sh               # Main deployment script with secrets
+│   ├── setup.sh                    # Configuration generator
+│   ├── .env                        # Service configuration
+│   └── z_generated/                # Generated configs (by setup.sh)
+├── secrets/
+│   ├── setup.sh                    # Interactive secrets setup
+│   └── README.md                   # Secrets documentation
+└── k8s-azure/                      # Azure Kubernetes deployment
+    ├── deploy.sh                   # Azure deployment script
+    └── process-k8s-manifests.sh    # Manifest processor
 ```
 
 ## Debugging Approach
@@ -120,23 +137,34 @@ When services fail:
 
 ## Testing
 
-Test that services match official FINOS behavior:
+Verify services are running correctly:
 ```bash
-# Verify standard endpoints
-curl http://localhost:6060/api/server/v1/info  # Engine
-curl http://localhost:6100/api/info            # SDLC
-curl http://localhost:9000                     # Studio
+# Check service status
+cd deploy/docker-finos-official
+./run-legend.sh studio ps
 
-# Compare responses with FINOS documentation
+# Verify standard endpoints
+curl http://localhost:6300/api/server/v1/info  # Engine
+curl http://localhost:6100/api/info            # SDLC
+curl http://localhost:9000/studio              # Studio
+curl http://localhost:6200/depot               # Depot
+curl http://localhost:9001/query               # Query
+
+# View service logs
+./run-legend.sh studio logs -f legend-engine
+./run-legend.sh studio logs -f legend-sdlc
+./run-legend.sh studio logs -f legend-studio
 ```
 
 ## Important Patterns
 
 1. **Always use official images**: Never build custom Legend service images
 2. **Minimal configuration**: Start with FINOS defaults, change only what's necessary
-3. **Standard ports**: Use FINOS standard ports (6060, 6100, 9000, etc.)
+3. **Standard ports**: Use configured ports (6300 for Engine, 6100 for SDLC, 9000 for Studio)
 4. **Official documentation**: Refer to FINOS repos, not third-party guides
 5. **No custom code**: Deploy Legend as-is from official distribution
+6. **Use run-legend.sh**: Always use the deployment script for consistency
+7. **Profile-based deployment**: Use Docker Compose profiles for service combinations
 
 ## References
 
@@ -192,6 +220,17 @@ The FINOS Legend project provides **official, production-ready deployment tools*
 **Current Status**: 100% migrated to official FINOS Legend deployment
 **Deployment Method**: `./run-legend.sh <profile> <command>`
 **Available Profiles**: setup, engine, sdlc, studio, depot, query, postgres
+
+## Service Architecture
+
+The Legend platform consists of these core services:
+- **Legend Engine** (port 6300): Core execution engine for Pure and model transformations
+- **Legend SDLC** (port 6100): Source control and lifecycle management with GitLab integration
+- **Legend Studio** (port 9000): Web UI for modeling and development
+- **Legend Depot** (port 6200): Model repository and sharing service
+- **Legend Query** (port 9001): Data exploration and query interface
+- **MongoDB** (port 27017): Primary database for all Legend services
+- **PostgreSQL** (port 5432): Additional database for certain services
 
 ## Deployment Philosophy
 
@@ -269,3 +308,37 @@ If you cannot find an official solution:
 - Add new sections to relevant existing files
 - Consolidate information rather than creating new files
 - Keep the repository structure clean and organized
+
+## Common Tasks
+
+### Checking Service Health
+```bash
+cd deploy/docker-finos-official
+./run-legend.sh studio ps
+docker logs legend-engine --tail 50
+docker logs legend-sdlc --tail 50
+```
+
+### Troubleshooting OAuth Issues
+1. Verify GITLAB_APP_ID and GITLAB_APP_SECRET in secrets.env
+2. Check GitLab OAuth app has "Confidential" checked
+3. Ensure redirect URIs match exactly (including port numbers)
+4. Clear browser cookies and try incognito mode
+5. Check logs: `./run-legend.sh studio logs -f legend-sdlc`
+
+### Rebuilding Services
+```bash
+# Clean rebuild (removes volumes)
+./run-legend.sh studio down -v
+./run-legend.sh setup up
+./run-legend.sh studio up -d
+
+# Restart without losing data
+./run-legend.sh studio restart
+```
+
+### Accessing Services
+- Studio UI: http://localhost:9000/studio
+- SDLC API: http://localhost:6100/api/info
+- Engine API: http://localhost:6300/api/server/v1/info
+- MongoDB: mongodb://admin:admin@localhost:27017

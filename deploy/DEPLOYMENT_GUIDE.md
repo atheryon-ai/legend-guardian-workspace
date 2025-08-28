@@ -52,8 +52,8 @@ A simplified Docker Compose setup for quick local development:
 
 ### For Docker Deployment:
 - Docker and Docker Compose installed
-- GitLab OAuth credentials configured (see [GitLab OAuth Setup](./GITLAB_OAUTH_SETUP.md))
-- Environment variables configured in `secrets.env`
+- GitLab OAuth credentials configured (see [Secrets Guide](./secrets/README.md))
+- Environment variables configured in `.env.local` or `.env.docker`
 
 ### For Kubernetes Deployment:
 - Kubernetes cluster (1.19+)
