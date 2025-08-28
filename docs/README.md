@@ -24,8 +24,7 @@ This project uses **100% official FINOS Legend components**:
 
 ```bash
 # 1. Configure secrets (GitLab OAuth required)
-cp .env.example secrets.env
-nano secrets.env  # Add GITLAB_APP_ID and GITLAB_APP_SECRET
+./deploy/secrets/setup.sh --env local --interactive
 
 # 2. Run one-time setup
 cd deploy/docker-finos-official

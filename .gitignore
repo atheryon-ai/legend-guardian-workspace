@@ -28,12 +28,18 @@ ENV/
 env.bak/
 venv.bak/
 
-# Environment variables
+# Environment variables (root - deprecated, use deploy/)
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Deployment secrets
+deploy/secrets/.env*
+!deploy/secrets/.env*.example
+deploy/docker-finos-official/secrets.env
+deploy/k8s-azure/azure-legend.env
 secrets.env
 
 # IDE

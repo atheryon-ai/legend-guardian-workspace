@@ -8,42 +8,71 @@ This project provides a clean, focused deployment of the FINOS Legend platform u
 
 ### High-Level Architecture (Full Stack)
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    Atheryon FINOS Legend Platform                    │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
-│  │   Legend     │  │   Legend     │  │   Legend     │  │   Legend     │ │
-│  │   Studio     │  │   Query      │  │   SDLC       │  │   Depot      │ │
-│  │  (Port 9000) │  │  (Port 9001) │  │  (Port 6100) │  │  (Port 6200) │ │
-│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘ │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────────────────┐ │
-│  │                    Legend Engine (Port 6300)                    │ │
-│  │               Core Execution and Model Processing               │ │
-│  └─────────────────────────────────────────────────────────────────┘ │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌──────────────────────────┐  ┌──────────────────────────────────┐ │
-│  │      MongoDB (27017)      │  │      PostgreSQL (5432)          │ │
-│  │    Primary Database       │  │    Additional Storage           │ │
-│  └──────────────────────────┘  └──────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Platform["Atheryon FINOS Legend Platform"]
+        subgraph UI["UI Layer"]
+            Studio["Legend Studio<br/>Port 9000"]
+            Query["Legend Query<br/>Port 9001"]
+        end
+        
+        subgraph Services["Service Layer"]
+            SDLC["Legend SDLC<br/>Port 6100"]
+            Depot["Legend Depot<br/>Port 6200"]
+        end
+        
+        Engine["Legend Engine<br/>Port 6300<br/>Core Execution and Model Processing"]
+        
+        subgraph Data["Data Layer"]
+            MongoDB["MongoDB<br/>Port 27017<br/>Primary Database"]
+            PostgreSQL["PostgreSQL<br/>Port 5432<br/>Additional Storage"]
+        end
+    end
+    
+    Studio --> Engine
+    Query --> Engine
+    SDLC --> Engine
+    Depot --> Engine
+    Engine --> MongoDB
+    Engine --> PostgreSQL
+    SDLC --> MongoDB
 ```
 
 ### Service Dependencies
 
-```
-Setup Service (One-time configuration generation)
-  └── Generates configs for all services
-
-MongoDB (27017) + PostgreSQL (5432)
-  ├── Legend Engine (6300)
-  │   ├── Legend Studio (9000)
-  │   ├── Legend Query (9001)
-  │   └── Legend Depot (6200)
-  └── Legend SDLC (6100)
-      ├── Legend Studio (9000)
-      └── GitLab Integration
+```mermaid
+graph TD
+    Setup["Setup Service<br/>One-time configuration generation"]
+    Setup -->|Generates configs| AllServices[All Services]
+    
+    subgraph Databases
+        MongoDB["MongoDB :27017"]
+        PostgreSQL["PostgreSQL :5432"]
+    end
+    
+    subgraph Backend
+        Engine["Legend Engine :6300"]
+        SDLC["Legend SDLC :6100"]
+    end
+    
+    subgraph Frontend
+        Studio["Legend Studio :9000"]
+        Query["Legend Query :9001"]
+        Depot["Legend Depot :6200"]
+    end
+    
+    GitLab["GitLab Integration"]
+    
+    MongoDB --> Engine
+    MongoDB --> SDLC
+    PostgreSQL --> Engine
+    
+    Engine --> Studio
+    Engine --> Query
+    Engine --> Depot
+    
+    SDLC --> Studio
+    SDLC --> GitLab
 ```
 
 ## 🐳 Docker Architecture
