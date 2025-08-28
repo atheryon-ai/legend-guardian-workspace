@@ -80,25 +80,24 @@ graph TD
 ### Container Structure (Official FINOS Deployment)
 
 ```mermaid
-graph TD
-    subgraph "deploy/docker-finos-official/"
+graph TB
+    subgraph deploy["deploy/docker-finos-official/"]
         DC["docker-compose.yml<br/>Official FINOS compose file"]
         RUN["run-legend.sh<br/>Main deployment script"]
         SETUP["setup.sh<br/>Configuration generator"]
         ENV[".env<br/>Service configuration"]
-        
-        subgraph "z_generated/"
-            direction LR
-            ENG["engine/config/"]
-            SDLC["sdlc/config/"]
-            DEP["depot/config/"]
-            DS["depot-store/config/"]
-        end
-        
-        subgraph "depot-store/"
-            DSC["config/"]
-            DSS["setup/"]
-        end
+    end
+    
+    subgraph generated["z_generated/"]
+        ENG["engine/config/"]
+        SDLC["sdlc/config/"]
+        DEP["depot/config/"]
+        DS["depot-store/config/"]
+    end
+    
+    subgraph depotstore["depot-store/"]
+        DSC["config/"]
+        DSS["setup/"]
     end
     
     SETUP --> ENG

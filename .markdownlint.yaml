@@ -1,0 +1,28 @@
+# Markdownlint Configuration
+
+# Default state for rules
+default: true
+
+# Line length
+MD013: false
+
+# Inline HTML
+MD033: false
+
+# Code block style
+MD046:
+  style: fenced
+
+# First line in file should be a top level header
+MD041: false
+
+# Proper emphasis markers
+MD049:
+  style: asterisk
+
+# Proper unordered list markers  
+MD004:
+  style: dash
+
+# Lists should be surrounded by blank lines
+MD032: true

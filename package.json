@@ -1,0 +1,23 @@
+{
+  "name": "legend-guardian-workspace",
+  "version": "1.0.0",
+  "description": "A clean, focused deployment of the FINOS Legend platform using Docker.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint:mermaid": "node scripts/validate-mermaid.js",
+    "lint:markdown": "markdownlint-cli2 '**/*.md' '#node_modules'",
+    "lint": "npm run lint:mermaid && npm run lint:markdown"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^11.9.0",
+    "markdownlint-cli2": "^0.18.1"
+  }
+}
