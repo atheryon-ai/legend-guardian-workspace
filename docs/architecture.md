@@ -50,24 +50,32 @@ MongoDB (27017) + PostgreSQL (5432)
 
 ### Container Structure (Official FINOS Deployment)
 
-```
-deploy/docker-finos-official/
-├── docker-compose.yml    # Official FINOS compose file
-├── run-legend.sh        # Main deployment script
-├── setup.sh            # Configuration generator
-├── .env               # Service configuration
-├── z_generated/       # Auto-generated configs
-│   ├── engine/
-│   │   └── config/
-│   ├── sdlc/
-│   │   └── config/
-│   ├── depot/
-│   │   └── config/
-│   └── depot-store/
-│       └── config/
-└── depot-store/       # Depot store setup
-    ├── config/
-    └── setup/
+```mermaid
+graph TD
+    subgraph "deploy/docker-finos-official/"
+        DC["docker-compose.yml<br/>Official FINOS compose file"]
+        RUN["run-legend.sh<br/>Main deployment script"]
+        SETUP["setup.sh<br/>Configuration generator"]
+        ENV[".env<br/>Service configuration"]
+        
+        subgraph "z_generated/"
+            direction LR
+            ENG["engine/config/"]
+            SDLC["sdlc/config/"]
+            DEP["depot/config/"]
+            DS["depot-store/config/"]
+        end
+        
+        subgraph "depot-store/"
+            DSC["config/"]
+            DSS["setup/"]
+        end
+    end
+    
+    SETUP --> ENG
+    SETUP --> SDLC
+    SETUP --> DEP
+    SETUP --> DS
 ```
 
 ### Docker Compose Profiles

@@ -1,4 +1,6 @@
 #!/bin/bash
+# This script should be run from the deploy/k8s-azure directory
+# It pushes Legend Docker images to Azure Container Registry
 
 set -e
 
@@ -24,13 +26,14 @@ print_success() {
 }
 
 # Load configuration from environment
-if [ -f ".env.azure" ]; then
-    source .env.azure
-elif [ -f ".env.local" ]; then
-    source .env.local
+# Script is now in deploy/k8s-azure/, so go up two levels to find env files
+if [ -f "../../.env.azure" ]; then
+    source ../../.env.azure
+elif [ -f "../../.env.local" ]; then
+    source ../../.env.local
 else
-    echo "No environment file found (.env.azure or .env.local)"
-    echo "Please run: deploy/secrets/setup.sh --env azure"
+    echo "No environment file found (../../.env.azure or ../../.env.local)"
+    echo "Please run: ../secrets/setup.sh --env azure"
     exit 1
 fi
 
@@ -167,7 +170,7 @@ spec:
       - name: legend-engine
         image: $ACR_LOGIN_SERVER/legend-engine:latest
         ports:
-        - containerPort: 6060
+        - containerPort: 6300
         resources:
           requests:
             memory: "1Gi"
@@ -185,8 +188,8 @@ spec:
   selector:
     app: legend-engine
   ports:
-  - port: 6060
-    targetPort: 6060
+  - port: 6300
+    targetPort: 6300
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -207,7 +210,7 @@ spec:
       - name: legend-sdlc
         image: $ACR_LOGIN_SERVER/legend-sdlc:latest
         ports:
-        - containerPort: 7070
+        - containerPort: 6100
         resources:
           requests:
             memory: "1Gi"
@@ -225,8 +228,8 @@ spec:
   selector:
     app: legend-sdlc
   ports:
-  - port: 7070
-    targetPort: 7070
+  - port: 6100
+    targetPort: 6100
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -247,7 +250,7 @@ spec:
       - name: legend-studio
         image: $ACR_LOGIN_SERVER/legend-studio:latest
         ports:
-        - containerPort: 80
+        - containerPort: 9000
         resources:
           requests:
             memory: "256Mi"
@@ -265,8 +268,8 @@ spec:
   selector:
     app: legend-studio
   ports:
-  - port: 8080
-    targetPort: 80
+  - port: 9000
+    targetPort: 9000
 EOF
 
 print_success "Deployment file created at: ~/legend-builds/deploy-from-acr.yaml"
@@ -278,6 +281,6 @@ echo "To check deployment status:"
 echo "  kubectl get pods -n legend-system"
 echo ""
 echo "To access services locally:"
-echo "  kubectl port-forward -n legend-system svc/legend-studio 8080:8080"
-echo "  kubectl port-forward -n legend-system svc/legend-engine 6060:6060"
-echo "  kubectl port-forward -n legend-system svc/legend-sdlc 7070:7070"
+echo "  kubectl port-forward -n legend-system svc/legend-studio 9000:9000"
+echo "  kubectl port-forward -n legend-system svc/legend-engine 6300:6300"
+echo "  kubectl port-forward -n legend-system svc/legend-sdlc 6100:6100"
