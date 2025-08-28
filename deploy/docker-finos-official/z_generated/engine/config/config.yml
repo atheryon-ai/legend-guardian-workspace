@@ -1,0 +1,37 @@
+server:
+  type: simple
+  applicationContextPath: /
+  adminContextPath: /admin
+  connector:
+    type: http
+    port: 6300
+  requestLog:
+    appenders: []
+
+logging:
+  level: INFO
+  appenders:
+    - type: console
+
+deployment:
+  mode: PROD
+
+pac4j:
+  bypassPaths:
+    - /api/server/v1/info
+    - /api/pure/v1/utilities/compile
+  mongoUri: ${MONGODB_URI}
+  mongoDb: ${MONGODB_NAME}
+  clients: []
+  mongoSession:
+    enabled: false
+
+swagger:
+  resourcePackage: org.finos.legend.engine.server.core
+  title: Legend Engine
+  version: 1.0.0
+
+relationalexecution:
+  tempPath: /tmp
+  temporarytestdb:
+    port: 9093

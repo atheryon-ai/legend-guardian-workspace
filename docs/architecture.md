@@ -38,6 +38,64 @@ graph TB
     SDLC --> MongoDB
 ```
 
+### Data Format & Storage
+
+Legend stores models as JSON-serialized Pure in GitLab, not as raw Pure source files. Each model element becomes a JSON file containing:
+
+- **Pure model structure** - The actual model definition
+- **Metadata** - Classifiers, packages, and properties
+- **Tagged values and stereotypes** - Additional model annotations
+
+#### Example GitLab Repository Structure
+
+```
+your-project/
+├── entities/
+│   └── model/
+│       ├── Person.json          # Person class definition
+│       ├── Firm.json            # Firm class definition
+│       └── Trade.json           # Trade class definition
+├── mapping/
+│   └── DatabaseMapping.json
+└── project.json                 # Project metadata
+```
+
+#### Model File Format
+
+```json
+{
+  "classifierPath": "meta::pure::metamodel::type::Class",
+  "content": {
+    "_type": "class",
+    "name": "Person",
+    "package": "model",
+    "properties": [
+      {
+        "name": "firstName",
+        "type": "String",
+        "multiplicity": {"lowerBound": 1, "upperBound": 1}
+      }
+    ]
+  }
+}
+```
+
+#### Key Points
+
+- **NOT raw Pure code** (.pure files)
+- **NOT Java code**
+- **IS JSON representation** of Pure models
+- **SDLC handles** JSON ↔ Pure conversion
+- **Studio shows** Pure syntax, but stores JSON
+- **GitLab commits** show JSON changes
+
+#### Benefits of JSON Format
+
+- **Version control friendly** - Easy to diff and track changes
+- **Structured metadata storage** - Consistent format for all models
+- **Tool-independent representation** - Can be parsed by various tools
+- **Easy parsing and transformation** - Standard JSON libraries work
+
 ### Service Dependencies
 
 ```mermaid

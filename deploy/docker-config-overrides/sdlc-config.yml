@@ -25,7 +25,7 @@ pac4j:
   authorizers: {}
 
 mongodb:
-  url: mongodb://mongodb.legend-system.svc.cluster.local:27017/legend
+  url: mongodb://admin:admin@mongodb:27017/legend?authSource=admin
   database: legend
   sessionEnabled: false
 

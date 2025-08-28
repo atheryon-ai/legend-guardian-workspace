@@ -35,6 +35,10 @@ services:
       - LEGEND_ENGINE_PORT=6300
       - LEGEND_ENGINE_HOST=0.0.0.0
       - MONGODB_URI=mongodb://admin:admin@mongodb:27017/legend?authSource=admin
+      - MONGODB_NAME=${MONGODB_NAME:-legend}
+      - GITLAB_HOST=${GITLAB_HOST:-gitlab.com}
+      - GITLAB_APP_ID=${GITLAB_APP_ID}
+      - GITLAB_APP_SECRET=${GITLAB_APP_SECRET}
       - JAVA_OPTS=-Xmx2g -Xms1g -XX:+UseG1GC
     volumes:
       - ../docker-config-overrides/engine-config.yml:/config/config.yml:ro
@@ -60,6 +64,7 @@ services:
       - LEGEND_SDLC_PORT=6100
       - LEGEND_SDLC_HOST=0.0.0.0
       - MONGODB_URI=mongodb://admin:admin@mongodb:27017/legend?authSource=admin
+      - MONGODB_NAME=${MONGODB_NAME:-legend}
       - GITLAB_HOST=${GITLAB_HOST:-gitlab.com}
       - GITLAB_APP_ID=${GITLAB_APP_ID}
       - GITLAB_APP_SECRET=${GITLAB_APP_SECRET}

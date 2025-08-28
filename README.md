@@ -62,6 +62,26 @@ See the [Docker README](deploy/docker-finos-official/README_DOCKER.md) and [Secr
 
 ## 📚 Documentation
 
+### FINOS CDM Financial Models
+
+FINOS provides the **Common Domain Model (CDM)** repository with pre-built Pure models for financial products that can be used directly in Legend:
+
+- **Repository**: https://gitlab.com/finosfoundation/legend/financial-objects/cdm.git
+- **Project ID**: UAT-34
+- **Content**: 400+ financial domain classes including:
+  - Assets (Bonds, Equities, Commodities)
+  - Derivatives (CreditDefaultSwap, Options, Swaps)
+  - FpML standard models
+  - Reference data models
+
+**Using CDM in Legend Studio:**
+1. Access Legend Studio at http://localhost:9000/studio
+2. Create new project → Connect to GitLab
+3. Use CDM repository URL: `https://gitlab.com/finosfoundation/legend/financial-objects/cdm.git`
+4. Import and use the Pure models directly in your projects
+
+### Platform Documentation
+
 - [Docker Setup Details](deploy/docker-finos-official/README_DOCKER.md)
 - [Secrets Management](deploy/secrets/README.md)
 - [Architecture](docs/architecture.md)
