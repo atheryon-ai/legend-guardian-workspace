@@ -10,13 +10,14 @@ This guide provides a high-level overview of the available deployment methods. P
 
 ---
 
-## 1. Docker Deployment
+## 1. Docker Deployment (Official FINOS)
 
-A comprehensive, full-stack deployment using Docker Compose. This method is ideal for local development and evaluation. It uses a profile-based system to launch various combinations of Legend services.
+A comprehensive, full-stack deployment using the official FINOS Legend Docker Compose setup. This method is ideal for local development and evaluation. It uses a profile-based system to launch various combinations of Legend services.
 
 - **Technology:** Docker, Docker Compose
-- **Configuration:** Uses a `.env` file for environment variables.
-- **Details:** [**Docker Deployment README**](./docker/README_DOCKER.md)
+- **Configuration:** Uses `.env` file and `secrets.env` for GitLab OAuth
+- **Script:** Use `run-legend.sh` for easy deployment management
+- **Details:** [**Docker Deployment README**](./docker-finos-official/README_DOCKER.md)
 
 ---
 
@@ -24,6 +25,37 @@ A comprehensive, full-stack deployment using Docker Compose. This method is idea
 
 A set of manifests and scripts for deploying the Legend platform to a Kubernetes cluster. This method is suitable for more scalable or production-like environments.
 
-- **Technology:** Kubernetes, Kubectl
-- **Configuration:** Uses `.yaml` manifests and environment-specific scripts.
-- **Details:** [**Kubernetes Deployment README**](./kubernetes/README.md)
+- **Technology:** Kubernetes, Kubectl, Kustomize
+- **Configuration:** Uses `.yaml` manifests with Kustomize for customization
+- **Details:** [**Kubernetes Deployment README**](./k8s/README.md)
+- **Azure Deployment:** [**Azure AKS Deployment**](./k8s-azure/) with automated scripts
+
+---
+
+## Additional Deployment Options
+
+### Docker Local Development
+
+A simplified Docker Compose setup for quick local development:
+- **Location:** `./docker-local/`
+- **Script:** `start.sh` for easy startup
+- **Use Case:** Quick testing and development
+
+### Environment-Specific Overrides
+
+- **Docker Configs:** `./docker-config-overrides/` - Configuration files for Docker deployments
+- **K8s Overrides:** `./k8s-overrides/` - Environment-specific Kubernetes customizations
+
+---
+
+## Prerequisites
+
+### For Docker Deployment:
+- Docker and Docker Compose installed
+- GitLab OAuth credentials configured (see [GitLab OAuth Setup](./GITLAB_OAUTH_SETUP.md))
+- Environment variables configured in `secrets.env`
+
+### For Kubernetes Deployment:
+- Kubernetes cluster (1.19+)
+- kubectl configured
+- Kustomize (optional, for customization)
