@@ -30,9 +30,9 @@ mongodb:
   sessionEnabled: false
 
 gitlab:
-  appId: "29713286"
-  appSecret: "gloas-81d50924397a5775489f205099fc17f82a84ae41557739099313383b46ab05ab"
-  host: "gitlab.com"
+  appId: "${GITLAB_APP_ID}"
+  appSecret: "${GITLAB_APP_SECRET}"
+  host: "${GITLAB_HOST}"
 
 # Optional: baseline SDLC feature toggles to reduce external dependencies
 features:
