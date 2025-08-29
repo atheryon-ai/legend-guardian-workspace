@@ -1,0 +1,157 @@
+
+services:
+  legend-engine:
+    image: finos/legend-engine-server:4.40.3
+    container_name: legend-engine
+    ports:
+      - "6300:6300"
+    environment:
+      # Mongo + optional OAuth vars (empty OAuth disables requirement)
+      - MONGODB_URI=mongodb://admin:password@legend-mongo:27017
+      - MONGODB_NAME=legend
+      - MONGO_SESSION_ENABLED=true
+      - GITLAB_HOST=${GITLAB_HOST:-gitlab.com}
+      - GITLAB_APP_ID=${GITLAB_APP_ID}
+      - GITLAB_APP_SECRET=${GITLAB_APP_SECRET}
+      - ENGINE_HOST=legend-engine
+      - ENGINE_PORT=6300
+      - METADATA_PURE_HOST=legend-depot
+      - METADATA_PURE_PORT=6301
+      - METADATA_ALLOY_HOST=legend-depot
+      - METADATA_ALLOY_PORT=6200
+      - TEMP_DB_PORT=6302
+    depends_on:
+      - legend-mongo
+    profiles:
+      - default
+      - full
+
+  legend-sdlc:
+    image: finos/legend-sdlc-server:0.115.0
+    container_name: legend-sdlc
+    ports:
+      - "6100:6100"
+    environment:
+      - MONGODB_URI=mongodb://admin:password@legend-mongo:27017
+      - MONGODB_NAME=legend
+      - MONGO_SESSION_ENABLED=true
+      - SDLC_PORT=6100
+      - SDLC_ADMIN_PORT=6101
+      - SDLC_PROJECT_TAG=legend
+      - GITLAB_HOST=${GITLAB_HOST:-gitlab.com}
+      - GITLAB_APP_ID=${GITLAB_APP_ID}
+      - GITLAB_APP_SECRET=${GITLAB_APP_SECRET}
+      - SDLC_MAVEN_VERSION=0.91.1
+      - ENGINE_MAVEN_VERSION=3.15.3
+      - SDLC_REDIRECT_URI=http://localhost:6100/api/auth/callback
+    depends_on:
+      - legend-mongo
+    profiles:
+      - default
+      - full
+
+  legend-studio:
+    image: finos/legend-studio:8.38.0
+    container_name: legend-studio
+    ports:
+      - "9000:9000"
+    environment:
+      - GITLAB_HOST=${GITLAB_HOST:-gitlab.com}
+      - GITLAB_APP_ID=${GITLAB_APP_ID}
+      - GITLAB_APP_SECRET=${GITLAB_APP_SECRET}
+      # Studio serves a web app; these hosts must be browser-resolvable
+      - LEGEND_STUDIO_ENGINE_HOST=${ENGINE_HOST:-localhost}
+      - LEGEND_STUDIO_ENGINE_PORT=${ENGINE_PORT:-6300}
+      - LEGEND_STUDIO_SDLC_HOST=${SDLC_HOST:-localhost}
+      - LEGEND_STUDIO_SDLC_PORT=${SDLC_PORT:-6100}
+      - ENGINE_HOST=${ENGINE_HOST:-localhost}
+      - ENGINE_PORT=${ENGINE_PORT:-6300}
+      - SDLC_HOST=${SDLC_HOST:-localhost}
+      - SDLC_PORT=${SDLC_PORT:-6100}
+      - STUDIO_HOST=${STUDIO_HOST:-localhost}
+      - STUDIO_PORT=${STUDIO_PORT:-9000}
+      - DEPOT_HOST=${DEPOT_HOST:-localhost}
+      - DEPOT_PORT=${DEPOT_PORT:-6200}
+      - MONGODB_URI=mongodb://admin:password@legend-mongo:27017
+      - MONGODB_NAME=legend
+      - MONGO_SESSION_ENABLED=true
+    depends_on:
+      - legend-engine
+      - legend-sdlc
+    profiles:
+      - default
+      - full
+
+  legend-depot:
+    image: finos/legend-depot-server:1.5.3
+    container_name: legend-depot
+    ports:
+      - "6200:6200"
+    environment:
+      - GITLAB_HOST=${GITLAB_HOST:-gitlab.com}
+      - GITLAB_APP_ID=${GITLAB_APP_ID}
+      - GITLAB_APP_SECRET=${GITLAB_APP_SECRET}
+      - LEGEND_DEPOT_POSTGRES_HOST=legend-postgres
+      - LEGEND_DEPOT_POSTGRES_PORT=5432
+      - LEGEND_DEPOT_POSTGRES_DB=legend
+      - LEGEND_DEPOT_POSTGRES_USER=postgres
+      - LEGEND_DEPOT_POSTGRES_PASSWORD=postgres
+      - DEPOT_PORT=6200
+      - DEPOT_HOST=legend-depot
+      - MONGODB_URI=mongodb://admin:password@legend-mongo:27017
+      - MONGODB_NAME=legend
+      - MONGO_SESSION_ENABLED=true
+    depends_on:
+      - legend-postgres
+    profiles:
+      - full
+
+  legend-mongo:
+    image: mongo:4.2
+    container_name: legend-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    profiles:
+      - default
+      - full
+
+  legend-postgres:
+    image: postgres:13
+    container_name: legend-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=legend
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    profiles:
+      - full
+
+  legend-guardian-agent:
+    build:
+      context: ../../
+      dockerfile: deploy/local/Dockerfile.agent
+    container_name: legend-guardian-agent
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - ENGINE_URL=http://legend-engine:6300
+      - SDLC_URL=http://legend-sdlc:6100
+      - DEPOT_URL=http://legend-depot:6200
+      - STUDIO_URL=http://legend-studio:9000
+    depends_on:
+      - legend-engine
+      - legend-sdlc
+      - legend-depot
+      - legend-studio
+    profiles:
+      - full
+
+networks:
+  default:
+    name: legend-network
