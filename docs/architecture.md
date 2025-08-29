@@ -15,20 +15,20 @@ graph TB
             Studio["Legend Studio<br/>Port 9000"]
             Query["Legend Query<br/>Port 9001"]
         end
-        
+      
         subgraph Services["Service Layer"]
             SDLC["Legend SDLC<br/>Port 6100"]
             Depot["Legend Depot<br/>Port 6200"]
         end
-        
+      
         Engine["Legend Engine<br/>Port 6300<br/>Core Execution and Model Processing"]
-        
+      
         subgraph Data["Data Layer"]
             MongoDB["MongoDB<br/>Port 27017<br/>Primary Database"]
             PostgreSQL["PostgreSQL<br/>Port 5432<br/>Additional Storage"]
         end
     end
-    
+  
     Studio --> Engine
     Query --> Engine
     SDLC --> Engine
@@ -100,35 +100,35 @@ your-project/
 
 ```mermaid
 graph TD
-    Setup["Setup Service<br/>One-time configuration generation"]
+    Setup["Setup Service<br/>One-time configuration<br> generation"]
     Setup -->|Generates configs| AllServices[All Services]
-    
+  
     subgraph Databases
-        MongoDB["MongoDB :27017"]
-        PostgreSQL["PostgreSQL :5432"]
+        MongoDB["MongoDB :27017 <br> stores json which <br>is serialised PURE"]
+        PostgreSQL["PostgreSQL :5432 <br> Play/Demo DB"]
     end
-    
+  
     subgraph Backend
         Engine["Legend Engine :6300"]
-        SDLC["Legend SDLC :6100"]
+        SDLC["Legend SDLC :6100 <br> show PURE, generated <br>from serialised JSON"]
     end
-    
+  
     subgraph Frontend
-        Studio["Legend Studio :9000"]
+        Studio["Legend Studio :9000 <br> PURE GUI"]
         Query["Legend Query :9001"]
-        Depot["Legend Depot :6200"]
+        Depot["Legend Depot :6200 <br> Generated code/library <br>cache + metadata"]
     end
-    
-    GitLab["GitLab Integration"]
-    
+  
+    GitLab["GitLab Integration <br> Stores PURE serialised <br>which is JSON"]
+  
     MongoDB --> Engine
     MongoDB --> SDLC
     PostgreSQL --> Engine
-    
+  
     Engine --> Studio
     Engine --> Query
     Engine --> Depot
-    
+  
     SDLC --> Studio
     SDLC --> GitLab
 ```
@@ -145,19 +145,19 @@ graph TB
         SETUP["setup.sh<br/>Configuration generator"]
         ENV[".env<br/>Service configuration"]
     end
-    
+  
     subgraph generated["z_generated/"]
         ENG["engine/config/"]
         SDLC["sdlc/config/"]
         DEP["depot/config/"]
         DS["depot-store/config/"]
     end
-    
+  
     subgraph depotstore["depot-store/"]
         DSC["config/"]
         DSS["setup/"]
     end
-    
+  
     SETUP --> ENG
     SETUP --> SDLC
     SETUP --> DEP

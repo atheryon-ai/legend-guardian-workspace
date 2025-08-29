@@ -1,268 +1,314 @@
 # Legend Guardian Agent
 
-A production-grade agent for orchestrating FINOS Legend stack operations through natural language interfaces.
+The agent component for orchestrating FINOS Legend stack operations through natural language interfaces.
 
-## Architecture
+This directory contains the FastAPI-based agent that provides intelligent orchestration of Legend services. For workspace setup and deployment instructions, see the [root README](../README.md).
+
+## Agent Architecture
 
 ```mermaid
-graph TB
-    subgraph "Client Layer"
-        API[REST API Client]
-        NL[Natural Language Interface]
+graph LR
+    subgraph "Agent Core"
+        ORCH[Orchestrator<br/>Main Logic]
+        MEM[Memory Store<br/>Context Tracking]
+        RAG[RAG Store<br/>Knowledge Base]
+        POL[Policy Engine<br/>Guardrails]
     end
-    
-    subgraph "Agent Layer"
-        AGENT[Guardian Agent<br/>FastAPI:8000]
-        ORCH[Orchestrator]
-        MEM[Memory Store]
-        RAG[RAG/Vector Store]
+  
+    subgraph "API Layer"
+        REST[REST API<br/>FastAPI]
+        INTENT[Intent Router<br/>NLP Processing]
+        ADAPT[Service Adapters<br/>Legend Clients]
     end
-    
-    subgraph "Legend Stack"
-        ENGINE[Legend Engine<br/>:6300]
-        SDLC[Legend SDLC<br/>:6100]
-        DEPOT[Legend Depot<br/>:6200]
-        STUDIO[Legend Studio<br/>:9000]
+  
+    subgraph "External Services"
+        ENG[Legend Engine]
+        SDLC[Legend SDLC]
+        DEPOT[Legend Depot]
     end
-    
-    subgraph "Data Layer"
-        MONGO[(MongoDB)]
-        POSTGRES[(PostgreSQL)]
-    end
-    
-    API --> AGENT
-    NL --> AGENT
-    AGENT --> ORCH
+  
+    REST --> INTENT
+    INTENT --> ORCH
     ORCH --> MEM
     ORCH --> RAG
-    ORCH --> ENGINE
-    ORCH --> SDLC
-    ORCH --> DEPOT
-    ENGINE --> MONGO
-    SDLC --> MONGO
-    DEPOT --> POSTGRES
+    ORCH --> POL
+    ORCH --> ADAPT
+    ADAPT --> ENG
+    ADAPT --> SDLC
+    ADAPT --> DEPOT
 ```
 
-## Features
+## Agent Components
 
-- **Natural Language Processing**: Convert user intents into Legend operations
-- **Multi-Service Orchestration**: Coordinate across Engine, SDLC, and Depot
-- **PURE Compilation & Validation**: Real-time model validation
-- **Automated PR/Review Management**: GitLab integration for code reviews
-- **Service Generation & Publishing**: Automatic REST API generation
-- **Audit Trail**: Complete action logging and artifact generation
-- **RAG-Enhanced Context**: Leverage organizational knowledge base
-- **Policy Enforcement**: Guardrails for compliance and security
+### Core Modules
 
-## Quick Start
+- **Orchestrator** (`src/agent/orchestrator.py`): Coordinates multi-step workflows across Legend services
+- **Memory Store** (`src/agent/memory.py`): Maintains conversation context and state
+- **RAG Store** (`src/rag/`): Vector-based knowledge retrieval for enhanced context
+- **Policy Engine** (`src/agent/policies.py`): Enforces security and compliance guardrails
+- **LLM Client** (`src/agent/llm_client.py`): Interfaces with language models for intent processing
 
-### Prerequisites
+### Service Adapters
 
-- Docker & Docker Compose
-- Python 3.11+
-- Legend Stack running (or use Docker Compose profile)
+- **Engine Client** (`src/clients/engine.py`): PURE compilation, validation, and execution
+- **SDLC Client** (`src/clients/sdlc.py`): Workspace management and GitLab integration
+- **Depot Client** (`src/clients/depot.py`): Model repository and versioning
 
-### Local Development
+### API Routers
 
-```bash
-# Clone the repository
-git clone <repo-url>
-cd legend-guardian-agent
-
-# Set up environment
-cp deploy/local/.env.example .env
-# Edit .env with your configuration
-
-# Start Legend stack + Agent
-docker compose --profile full up -d
-
-# Or run agent in development mode
-make dev
-
-# Run tests
-make test
-
-# Run linting
-make lint
-```
-
-### API Documentation
-
-Once running, access the interactive API documentation:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
-## Use Cases
-
-The agent supports 8 primary use cases:
-
-1. **Ingest → Model → Map → Publish Service**: End-to-end data pipeline
-2. **Model Change with Safe Rollout**: Versioned schema evolution
-3. **Cross-bank Model Reuse via Depot**: Leverage shared models
-4. **Reverse ETL → Data Product**: Database to API transformation
-5. **Governance Audit & Lineage Proof**: Compliance documentation
-6. **Contract-first API**: Schema-driven development
-7. **Bulk Backfill & Regression**: Large-scale data processing
-8. **Incident Response / Rollback**: Emergency recovery procedures
-
-## Project Structure
-
-```
-legend-guardian-agent/
-├── src/                    # Source code
-│   ├── api/               # FastAPI application
-│   ├── agent/             # Orchestration logic
-│   ├── clients/           # Legend service clients
-│   └── rag/               # RAG/Vector store
-├── tests/                 # Test suite
-├── deploy/                # Deployment configurations
-│   ├── local/            # Docker Compose
-│   └── k8s/              # Kubernetes manifests
-├── ci/                    # CI/CD pipelines
-├── scripts/               # Utility scripts
-└── artifacts/             # Generated artifacts
-    ├── harness/          # Test harness scripts
-    └── docs/             # Documentation
-```
-
-## Configuration
-
-Environment variables (see `.env.example`):
-
-```bash
-# Legend Services
-ENGINE_URL=http://localhost:6300
-SDLC_URL=http://localhost:6100
-DEPOT_URL=http://localhost:6200
-STUDIO_URL=http://localhost:9000
-
-# Agent Configuration
-AGENT_URL=http://localhost:8000
-API_KEY=demo-key
-PROJECT_ID=demo-project
-WORKSPACE_ID=terry-dev
-
-# Security
-VALID_API_KEYS=demo-key,prod-key
-ENGINE_TOKEN=<token>
-SDLC_TOKEN=<token>
-DEPOT_TOKEN=<token>
-
-# Observability
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
-LOG_LEVEL=INFO
-```
-
-## Testing
-
-```bash
-# Run unit tests
-make test
-
-# Run specific test
-pytest tests/test_engine_client.py -v
-
-# Run test harness (all use cases)
-make harness
-
-# Run individual use case
-bash artifacts/harness/usecase1_ingest_publish.sh
-```
-
-## Deployment
-
-### Docker Compose (Local)
-
-```bash
-# Start core services
-docker compose up -d
-
-# Start with agent
-docker compose --profile full up -d
-
-# View logs
-docker compose logs -f agent
-```
-
-### Kubernetes (AKS)
-
-```bash
-# Create namespace
-kubectl apply -f deploy/k8s/namespace.yaml
-
-# Deploy secrets (configure Key Vault first)
-kubectl apply -f deploy/k8s/secrets.yaml
-
-# Deploy agent
-kubectl apply -f deploy/k8s/
-
-# Check status
-kubectl get pods -n legend-guardian
-kubectl logs -f deployment/legend-guardian-agent -n legend-guardian
-```
+- **Intent Router** (`src/api/routers/intent.py`): Natural language processing endpoint
+- **Flow Router** (`src/api/routers/flows.py`): Orchestrated workflow execution
+- **Adapter Routers** (`src/api/routers/adapters_*.py`): Direct service access
+- **Webhook Router** (`src/api/routers/webhooks.py`): Event-driven automation
 
 ## Development
 
-### Code Style
+### Local Setup
 
 ```bash
-# Format code
-make format
+# From this directory
+cd legend-guardian-agent
 
-# Lint
-make lint
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Type check
-make typecheck
+# Install dependencies
+pip install -r requirements.txt
+
+# Run in development mode
+make dev
 ```
 
-### Adding New Features
+### Running Tests
 
-1. Create feature branch: `git checkout -b feature/new-feature`
-2. Implement changes with tests
-3. Update OpenAPI spec if needed
-4. Run full test suite: `make test`
-5. Update documentation
-6. Submit PR with description
+```bash
+# Unit tests
+make test
+
+# Specific test file
+pytest tests/test_engine_client.py -v
+
+# With coverage
+pytest --cov=src tests/
+
+# Test harness for use cases
+make harness
+```
+
+### Code Quality
+
+```bash
+# Format code with black
+make format
+
+# Lint with flake8
+make lint
+
+# Type check with mypy
+make typecheck
+
+# Run all checks
+make check
+```
+
+## Agent-Specific Configuration
+
+The agent uses these environment variables beyond the standard Legend service URLs:
+
+```bash
+# Agent Features
+ENABLE_RAG=true                    # Enable RAG-enhanced responses
+ENABLE_MEMORY=true                 # Enable conversation memory
+ENABLE_POLICIES=true               # Enable policy enforcement
+MAX_RETRIES=3                      # Max retry attempts for failed operations
+TIMEOUT_SECONDS=30                 # Default timeout for operations
+
+# LLM Configuration (if using external LLM)
+LLM_PROVIDER=openai                # LLM provider (openai, anthropic, etc.)
+LLM_MODEL=gpt-4                   # Model to use
+LLM_API_KEY=<your-key>            # API key for LLM provider
+LLM_TEMPERATURE=0.7                # Response temperature
+
+# RAG Configuration
+RAG_CHUNK_SIZE=1000               # Document chunk size
+RAG_OVERLAP=200                   # Chunk overlap
+RAG_TOP_K=5                       # Number of results to retrieve
+
+# Memory Configuration
+MEMORY_TTL_HOURS=24               # How long to retain conversation memory
+MEMORY_MAX_TOKENS=4000            # Max tokens to store per conversation
+```
 
 ## API Endpoints
 
-### Core Endpoints
+### Agent-Specific Endpoints
 
-- `GET /health` - Health check with dependency status
-- `POST /intent` - Process natural language intent
-- `POST /adapters/engine/compile` - Compile PURE code
-- `POST /adapters/sdlc/workspaces/{id}` - Create workspace
-- `GET /adapters/depot/search` - Search depot models
+#### Intent Processing
+```python
+POST /intent
+{
+    "message": "Create a new data model for trading",
+    "context": {
+        "project_id": "my-project",
+        "workspace_id": "dev"
+    }
+}
+```
 
-See full OpenAPI specification at `/docs` when running.
+#### Flow Execution
+```python
+POST /flows/execute
+{
+    "flow_type": "ingest_publish",
+    "parameters": {
+        "source": "database",
+        "target": "api"
+    }
+}
+```
 
-## Monitoring
+#### Memory Management
+```python
+GET /agent/memory/{conversation_id}
+DELETE /agent/memory/{conversation_id}
+```
 
-- Health endpoint aggregates all service dependencies
-- OpenTelemetry traces for request flow
-- Structured logging with correlation IDs
-- Metrics exported to Azure Monitor (production)
+#### RAG Operations
+```python
+POST /agent/rag/index
+{
+    "documents": ["..."],
+    "metadata": {...}
+}
 
-## Security
+POST /agent/rag/search
+{
+    "query": "How to create a data model?",
+    "top_k": 5
+}
+```
 
-- Bearer token authentication for all endpoints
-- Secret management via Azure Key Vault (production)
-- PII redaction in logs
-- Network policies for service isolation
-- Automated vulnerability scanning in CI/CD
+## Extending the Agent
 
-## Support
+### Adding New Intent Handlers
 
-- Documentation: `artifacts/docs/`
-- Runbook: `artifacts/docs/runbook.md`
-- Use Cases: `artifacts/docs/usecases.md`
-- Issues: Create issue in repository
+1. Create handler in `src/agent/handlers/`
+2. Register in `src/agent/orchestrator.py`
+3. Add tests in `tests/test_handlers/`
+4. Update intent routing in `src/api/routers/intent.py`
 
-## License
+### Adding New Service Adapters
 
-Apache 2.0 - See LICENSE file
+1. Create client in `src/clients/`
+2. Add router in `src/api/routers/`
+3. Register in `src/api/main.py`
+4. Add integration tests
+
+### Custom Policies
+
+1. Define policy in `src/agent/policies.py`
+2. Add to policy chain in orchestrator
+3. Test with various scenarios
+4. Document in policy catalog
+
+## Performance Tuning
+
+### Caching
+- Redis-backed caching for frequent queries
+- TTL-based invalidation
+- Cache warming on startup
+
+### Connection Pooling
+- HTTP connection pooling for Legend services
+- Configurable pool sizes
+- Health check intervals
+
+### Async Operations
+- Fully async FastAPI implementation
+- Concurrent service calls where possible
+- Background task processing
+
+## Monitoring & Observability
+
+### Metrics
+- Request latency by endpoint
+- Service call success rates
+- Intent recognition accuracy
+- Memory and RAG hit rates
+
+### Logging
+- Structured JSON logging
+- Correlation IDs for request tracing
+- Sensitive data redaction
+- Log levels: DEBUG, INFO, WARN, ERROR
+
+### Tracing
+- OpenTelemetry integration
+- Distributed tracing across services
+- Span attributes for debugging
+
+## Security Considerations
+
+### Authentication
+- Bearer token validation
+- API key rotation support
+- Service-to-service auth tokens
+
+### Authorization
+- Role-based access control
+- Project/workspace isolation
+- Operation-level permissions
+
+### Data Protection
+- PII detection and redaction
+- Encryption at rest and in transit
+- Audit logging for compliance
+
+## Troubleshooting
+
+### Common Issues
+
+#### Agent Won't Start
+- Check Legend services are running: `curl http://localhost:6300/api/server/v1/info`
+- Verify environment variables are set
+- Check port 8000 is available
+
+#### Intent Not Recognized
+- Review intent patterns in system prompts
+- Check LLM connectivity (if using external)
+- Verify RAG index is populated
+
+#### Service Timeouts
+- Increase TIMEOUT_SECONDS
+- Check network connectivity to Legend services
+- Review service logs for errors
+
+### Debug Mode
+
+```bash
+# Enable debug logging
+LOG_LEVEL=DEBUG make dev
+
+# Enable request/response logging
+DEBUG_HTTP=true make dev
+
+# Disable caching for testing
+DISABLE_CACHE=true make dev
+```
 
 ## Contributing
 
-Please read CONTRIBUTING.md for development guidelines and submission process.
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for general guidelines.
+
+### Agent-Specific Guidelines
+
+1. **Intent Handlers**: Must be idempotent and handle partial failures
+2. **Service Clients**: Use retry logic with exponential backoff
+3. **Memory Store**: Implement cleanup for expired entries
+4. **RAG Updates**: Include source attribution for retrieved content
+5. **Policy Engine**: Default to restrictive, require explicit allows
+
+## License
+
+Apache 2.0 - See [LICENSE](LICENSE) file

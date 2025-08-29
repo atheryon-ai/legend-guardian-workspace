@@ -8,8 +8,14 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from opentelemetry import trace
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+try:
+    from opentelemetry import trace  # type: ignore
+    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor  # type: ignore
+    _OTEL_AVAILABLE = True
+except Exception:  # pragma: no cover - optional dependency
+    trace = None  # type: ignore
+    FastAPIInstrumentor = None  # type: ignore
+    _OTEL_AVAILABLE = False
 
 from src.api.routers import (
     adapters_depot,
@@ -56,10 +62,12 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Legend Guardian Agent", version=settings.app_version)
     
     # Initialize OpenTelemetry if enabled
-    if settings.otel_enabled:
-        tracer = trace.get_tracer(__name__)
-        FastAPIInstrumentor.instrument_app(app)
+    if settings.otel_enabled and _OTEL_AVAILABLE:
+        tracer = trace.get_tracer(__name__)  # type: ignore[attr-defined]
+        FastAPIInstrumentor.instrument_app(app)  # type: ignore[operator]
         logger.info("OpenTelemetry instrumentation enabled")
+    elif settings.otel_enabled and not _OTEL_AVAILABLE:
+        logger.warning("OpenTelemetry enabled but not installed; skipping instrumentation")
     
     yield
     

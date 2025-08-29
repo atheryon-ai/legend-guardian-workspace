@@ -1,31 +1,22 @@
-# Atheryon FINOS Legend Deployment Makefile
+.PHONY: dev lint test docker-build docker-up harness openapi
 
-.PHONY: help install docker-build docker-compose docker-compose-down docker-compose-logs clean
+dev:
+	uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
 
-help: ## Show this help message
-	@echo "Atheryon FINOS Legend Deployment"
-	@echo "================================"
-	@echo ""
-	@echo "Available commands:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+lint:
+	@echo "Linting not yet implemented"
 
-install: ## Install dependencies (not needed for Docker deployment)
-	@echo "No dependencies to install for Docker deployment"
-	@echo "Use 'make docker-compose' to deploy Legend platform"
+test:
+	@echo "Testing not yet implemented"
 
-docker-build: ## Build Legend platform Docker images
-	cd deploy/docker-finos-official && docker-compose build
+docker-build:
+	@echo "Docker build not yet implemented"
 
-docker-compose: ## Deploy Legend platform with Docker Compose
-	cd deploy/docker-finos-official && ./run-legend.sh studio up -d
+docker-up:
+	@echo "Docker up not yet implemented"
 
-docker-compose-down: ## Stop Legend platform services
-	cd deploy/docker-finos-official && ./run-legend.sh studio down
+harness:
+	@echo "Harness not yet implemented"
 
-docker-compose-logs: ## View Legend platform logs
-	cd deploy/docker-finos-official && ./run-legend.sh studio logs -f
-
-clean: ## Clean up Docker resources
-	cd deploy/docker-finos-official && ./run-legend.sh studio down -v
-	docker system prune -f
-
+openapi:
+	@echo "OpenAPI export not yet implemented"

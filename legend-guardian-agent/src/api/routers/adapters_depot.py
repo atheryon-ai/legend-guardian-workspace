@@ -3,7 +3,7 @@
 from typing import Any, Dict, List
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Body
 from pydantic import BaseModel, Field
 
 from src.api.deps import get_correlation_id, verify_api_key

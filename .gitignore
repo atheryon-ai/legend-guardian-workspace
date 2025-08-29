@@ -1,120 +1,31 @@
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
+*.pyc
+*.pyo
+*.pyd
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual Environment
-venv/
 env/
-ENV/
-env.bak/
-venv.bak/
+venv/
+.venv/
 
-# Environment variables (root - deprecated, use deploy/)
+# Environment
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
 
-# Deployment secrets
-deploy/secrets/.env*
-!deploy/secrets/.env*.example
-deploy/docker-finos-official/secrets.env
-deploy/k8s-azure/azure-legend.env
-secrets.env
-
-# IDE
-.vscode/
+# IDEs
 .idea/
-*.swp
-*.swo
-*~
+.vscode/
 
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
 
 # Logs
 *.log
-logs/
-
-# Docker
-.dockerignore
-
-# Kubernetes
-*.bak
-k8s/processed/
-azure-deployment/k8s/processed/
-
-# Testing
-.coverage
-htmlcov/
-.pytest_cache/
-.tox/
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pyenv
-.python-version
-
-# pipenv
-Pipfile.lock
-
-# PEP 582
-__pypackages__/
-
-# Celery
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-secrets.env.backup
-.env.docker
-.env.azure
-.env.k8s
+node_modules
+**/.DS_Store

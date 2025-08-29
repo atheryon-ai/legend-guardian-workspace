@@ -300,5 +300,18 @@ services:
     volumes:
     - ./graphiql:/usr/local/apache2/htdocs
 
+  legend-guardian-agent:
+    profiles: ["agent"]
+    build:
+      context: ../../
+      dockerfile: deploy/docker-finos-official/Dockerfile.agent
+    container_name: legend-guardian-agent
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    networks:
+      - legend
+
 networks:
   legend: {}
