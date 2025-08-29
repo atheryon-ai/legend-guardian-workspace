@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legend-guardian-agent
+  namespace: legend-guardian
+  labels:
+    app: legend-guardian-agent
+    app.kubernetes.io/name: legend-guardian-agent
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/part-of: legend-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: legend-guardian-agent
+  template:
+    metadata:
+      labels:
+        app: legend-guardian-agent
+        app.kubernetes.io/name: legend-guardian-agent
+        app.kubernetes.io/component: agent
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: legend-guardian-agent
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: agent
+        image: $(REGISTRY)/legend-guardian:$(CI_COMMIT_SHA)
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        env:
+        - name: ENGINE_URL
+          value: "http://legend-engine:6300"
+        - name: SDLC_URL
+          value: "http://legend-sdlc:6100"
+        - name: DEPOT_URL
+          value: "http://legend-depot:6200"
+        - name: STUDIO_URL
+          value: "http://legend-studio:9000"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: legend-guardian-secrets
+              key: database-url
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: legend-guardian-secrets
+              key: api-key
+        - name: ENGINE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: legend-guardian-secrets
+              key: engine-token
+              optional: true
+        - name: SDLC_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: legend-guardian-secrets
+              key: sdlc-token
+              optional: true
+        - name: DEPOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: legend-guardian-secrets
+              key: depot-token
+              optional: true
+        - name: OTEL_ENABLED
+          value: "true"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otel-collector:4317"
+        - name: OTEL_SERVICE_NAME
+          value: "legend-guardian-agent"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1.5Gi"
+            cpu: "1"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+          readOnly: true
+        - name: secrets
+          mountPath: /app/secrets
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: legend-guardian-config
+      - name: secrets
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: legend-guardian-azure-keyvault
+      imagePullSecrets:
+      - name: registry-credentials
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: legend-guardian-agent
+  namespace: legend-guardian
+  labels:
+    app: legend-guardian-agent
