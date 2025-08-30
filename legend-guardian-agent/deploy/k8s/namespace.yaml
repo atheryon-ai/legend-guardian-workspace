@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: legend-guardian
-  labels:
-    name: legend-guardian
-    app.kubernetes.io/name: legend-guardian
-    app.kubernetes.io/part-of: legend-platform
