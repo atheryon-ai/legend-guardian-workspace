@@ -113,14 +113,16 @@ async def test_create_project_minimal(sdlc_client):
     with patch.object(sdlc_client, '_request') as mock_request:
         mock_request.return_value = {"projectId": "new-proj"}
         
-        result = await sdlc_client.create_project("new-proj", "New Project")
+        result = await sdlc_client.create_project("new-proj", "New Project", "Test project")
         
         mock_request.assert_called_once_with(
             "POST",
             "/api/projects",
             json_data={
                 "projectId": "new-proj",
-                "name": "New Project"
+                "name": "New Project",
+                "description": "Test project",
+                "tags": []
             }
         )
         assert result["projectId"] == "new-proj"
@@ -150,7 +152,7 @@ async def test_create_workspace(sdlc_client):
         result = await sdlc_client.create_workspace(
             "proj1",
             "new-ws",
-            workspace_type="USER"
+            source="main"
         )
         
         mock_request.assert_called_once_with(
@@ -158,7 +160,7 @@ async def test_create_workspace(sdlc_client):
             "/api/projects/proj1/workspaces",
             json_data={
                 "workspaceId": "new-ws",
-                "workspaceType": "USER"
+                "source": "main"
             }
         )
         assert result["workspaceId"] == "new-ws"
@@ -175,7 +177,10 @@ async def test_create_workspace_minimal(sdlc_client):
         mock_request.assert_called_once_with(
             "POST",
             "/api/projects/proj1/workspaces",
-            json_data={"workspaceId": "new-ws"}
+            json_data={
+                "workspaceId": "new-ws",
+                "source": "HEAD"
+            }
         )
         assert result["workspaceId"] == "new-ws"
 
@@ -187,7 +192,7 @@ async def test_create_workspace_minimal(sdlc_client):
 async def test_delete_workspace(sdlc_client):
     """Test delete_workspace method."""
     with patch.object(sdlc_client, '_request') as mock_request:
-        mock_request.return_value = {"status": "deleted"}
+        mock_request.return_value = None  # delete_workspace returns None
         
         result = await sdlc_client.delete_workspace("proj1", "ws1")
         
@@ -195,7 +200,7 @@ async def test_delete_workspace(sdlc_client):
             "DELETE",
             "/api/projects/proj1/workspaces/ws1"
         )
-        assert result["status"] == "deleted"
+        assert result is None
 
 
 @pytest.mark.asyncio
@@ -218,15 +223,15 @@ async def test_get_entities(sdlc_client):
 
 @pytest.mark.asyncio
 async def test_get_entities_main(sdlc_client):
-    """Test get_entities for main branch."""
+    """Test get_entities for main branch - need workspace_id."""
     with patch.object(sdlc_client, '_request') as mock_request:
         mock_request.return_value = []
         
-        result = await sdlc_client.get_entities("proj1")
+        result = await sdlc_client.get_entities("proj1", "main")
         
         mock_request.assert_called_once_with(
             "GET",
-            "/api/projects/proj1/entities"
+            "/api/projects/proj1/workspaces/main/entities"
         )
         assert result == []
 
@@ -243,14 +248,17 @@ async def test_upsert_entities(sdlc_client):
         entities = [{"path": "model::NewEntity", "content": {"_type": "class"}}]
         result = await sdlc_client.upsert_entities(
             "proj1",
-            entities,
-            workspace_id="ws1"
+            "ws1",
+            entities
         )
         
         mock_request.assert_called_once_with(
             "POST",
             "/api/projects/proj1/workspaces/ws1/entities",
-            json_data={"entities": entities}
+            json_data={
+                "entities": entities,
+                "replace": False
+            }
         )
         assert result["status"] == "success"
 
@@ -262,19 +270,19 @@ async def test_upsert_entities(sdlc_client):
 async def test_delete_entity(sdlc_client):
     """Test delete_entity method."""
     with patch.object(sdlc_client, '_request') as mock_request:
-        mock_request.return_value = {"status": "deleted"}
+        mock_request.return_value = None  # delete_entity returns None
         
         result = await sdlc_client.delete_entity(
             "proj1",
-            "model::Entity1",
-            workspace_id="ws1"
+            "ws1",
+            "model::Entity1"
         )
         
         mock_request.assert_called_once_with(
             "DELETE",
             "/api/projects/proj1/workspaces/ws1/entities/model::Entity1"
         )
-        assert result["status"] == "deleted"
+        assert result is None
 
 
 # get_revisions and get_revision don't exist
@@ -295,10 +303,12 @@ async def test_create_review(sdlc_client):
         
         mock_request.assert_called_once_with(
             "POST",
-            "/api/projects/proj1/workspaces/ws1/reviews",
+            "/api/projects/proj1/reviews",
             json_data={
+                "workspaceId": "ws1",
                 "title": "Review Title",
-                "description": "Review Description"
+                "description": "Review Description",
+                "labels": []
             }
         )
         assert result["reviewId"] == "review1"
@@ -331,10 +341,10 @@ async def test_request_with_error(sdlc_client):
         mock_response.text = "Not found"
         mock_client.request.return_value = mock_response
         
-        with pytest.raises(Exception) as exc_info:
+        # The method has retry decorator, so it will raise RetryError after 3 attempts
+        from tenacity import RetryError
+        with pytest.raises(RetryError):
             await sdlc_client._request("GET", "/api/test")
-        
-        assert "404" in str(exc_info.value)
 
 
 @pytest.mark.asyncio

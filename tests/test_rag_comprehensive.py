@@ -6,21 +6,21 @@ import json
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
-from legend_guardian.rag.loader import DocumentLoader
+from legend_guardian.rag.loader import Loader
 from legend_guardian.rag.store import VectorStore
 
 
-class TestDocumentLoader:
-    """Tests for DocumentLoader."""
+class TestLoader:
+    """Tests for Loader."""
     
     def test_loader_initialization(self):
-        """Test DocumentLoader initialization."""
-        loader = DocumentLoader()
+        """Test Loader initialization."""
+        loader = Loader()
         assert loader.documents == []
     
     def test_load_file_text(self):
         """Test loading a text file."""
-        loader = DocumentLoader()
+        loader = Loader()
         
         with patch('builtins.open', mock_open(read_data="Test content")):
             loader.load_file("test.txt")
@@ -31,7 +31,7 @@ class TestDocumentLoader:
     
     def test_load_file_json(self):
         """Test loading a JSON file."""
-        loader = DocumentLoader()
+        loader = Loader()
         test_data = {"key": "value", "nested": {"data": "test"}}
         
         with patch('builtins.open', mock_open(read_data=json.dumps(test_data))):
@@ -42,7 +42,7 @@ class TestDocumentLoader:
     
     def test_load_file_error(self):
         """Test handling file load errors."""
-        loader = DocumentLoader()
+        loader = Loader()
         
         with patch('builtins.open', side_effect=FileNotFoundError()):
             result = loader.load_file("nonexistent.txt")
@@ -52,7 +52,7 @@ class TestDocumentLoader:
     
     def test_load_directory(self):
         """Test loading multiple files from directory."""
-        loader = DocumentLoader()
+        loader = Loader()
         
         with patch('os.walk') as mock_walk:
             mock_walk.return_value = [
@@ -66,7 +66,7 @@ class TestDocumentLoader:
     
     def test_load_directory_with_filter(self):
         """Test loading directory with file filter."""
-        loader = DocumentLoader()
+        loader = Loader()
         
         with patch('os.walk') as mock_walk:
             mock_walk.return_value = [
@@ -80,7 +80,7 @@ class TestDocumentLoader:
     
     def test_split_documents(self):
         """Test splitting documents into chunks."""
-        loader = DocumentLoader()
+        loader = Loader()
         loader.documents = [
             {"content": "A" * 1000, "source": "test.txt"}
         ]
@@ -92,7 +92,7 @@ class TestDocumentLoader:
     
     def test_split_documents_overlap(self):
         """Test splitting with overlap."""
-        loader = DocumentLoader()
+        loader = Loader()
         loader.documents = [
             {"content": "ABCDEFGHIJKLMNOP", "source": "test.txt"}
         ]
@@ -107,7 +107,7 @@ class TestDocumentLoader:
     
     def test_extract_metadata(self):
         """Test metadata extraction."""
-        loader = DocumentLoader()
+        loader = Loader()
         content = "Title: Test Doc\nAuthor: John\n\nContent here"
         
         metadata = loader.extract_metadata(content)
@@ -116,12 +116,86 @@ class TestDocumentLoader:
     
     def test_clear_documents(self):
         """Test clearing loaded documents."""
-        loader = DocumentLoader()
+        loader = Loader()
         loader.documents = [{"content": "test"}]
         
         loader.clear()
         
         assert loader.documents == []
+    
+    @pytest.mark.asyncio
+    async def test_async_load_documents(self):
+        """Test async load_documents method."""
+        loader = Loader()
+        
+        # Test with mock files
+        with patch('pathlib.Path.exists') as mock_exists, \
+             patch('pathlib.Path.is_file') as mock_is_file, \
+             patch.object(loader, '_load_file') as mock_load_file:
+            
+            mock_exists.return_value = True
+            mock_is_file.return_value = True
+            mock_load_file.return_value = {"content": "test", "path": "test.txt"}
+            
+            documents = await loader.load_documents(["test.txt"])
+            
+            assert len(documents) == 1
+            assert documents[0]["content"] == "test"
+    
+    @pytest.mark.asyncio
+    async def test_async_load_file(self):
+        """Test async _load_file method."""
+        loader = Loader()
+        
+        # Test loading text file
+        with patch('builtins.open', mock_open(read_data="Test content")):
+            from pathlib import Path
+            test_path = Path("test.txt")
+            
+            doc = await loader._load_file(test_path)
+            
+            assert doc is not None
+            assert doc["content"] == "Test content"
+            assert doc["name"] == "test.txt"
+            assert doc["type"] == "txt"
+            assert doc["path"] == str(test_path)
+        
+        # Test loading JSON file
+        test_data = {"key": "value"}
+        with patch('builtins.open', mock_open(read_data=json.dumps(test_data))):
+            test_path = Path("test.json")
+            
+            doc = await loader._load_file(test_path)
+            
+            assert doc is not None
+            assert doc["content"] == test_data
+            assert doc["type"] == "json"
+    
+    @pytest.mark.asyncio
+    async def test_async_load_directory(self):
+        """Test async loading of directories."""
+        loader = Loader()
+        
+        with patch('pathlib.Path.exists') as mock_exists, \
+             patch('pathlib.Path.is_dir') as mock_is_dir, \
+             patch('pathlib.Path.rglob') as mock_rglob, \
+             patch.object(loader, '_load_file') as mock_load_file:
+            
+            mock_exists.return_value = True
+            mock_is_dir.return_value = True
+            
+            # Create mock Path objects with proper suffixes
+            mock_file1 = Mock()
+            mock_file1.suffix = '.txt'
+            mock_file2 = Mock()
+            mock_file2.suffix = '.md'
+            
+            mock_rglob.return_value = [mock_file1, mock_file2]
+            mock_load_file.return_value = {"content": "test", "path": "test"}
+            
+            documents = await loader.load_documents(["/test/dir"])
+            
+            assert len(documents) == 2
 
 
 class TestVectorStore:
@@ -287,3 +361,84 @@ class TestVectorStore:
         assert stats["vector_dimensions"] == 1
         assert "index_built" in stats
         assert "memory_usage" in stats
+    
+    @pytest.mark.asyncio
+    async def test_async_query(self):
+        """Test async query method."""
+        store = VectorStore()
+        documents = [
+            {"content": "Python programming tutorial", "id": "1"},
+            {"content": "Java development guide", "id": "2"},
+            {"content": "Python data analysis", "id": "3"}
+        ]
+        store.add_documents(documents)
+        
+        # Test basic query
+        results = await store.query("Python")
+        assert len(results) == 2
+        assert all("Python" in doc["content"] for doc in results)
+        
+        # Test query with top_k limit
+        results = await store.query("Python", top_k=1)
+        assert len(results) == 1
+        
+        # Test query with filters
+        documents_with_metadata = [
+            {"content": "Python web development", "type": "tutorial", "id": "4"},
+            {"content": "Python machine learning", "type": "guide", "id": "5"}
+        ]
+        store.add_documents(documents_with_metadata)
+        
+        results = await store.query("Python", filters={"type": "tutorial"})
+        assert len(results) == 1
+        assert results[0]["type"] == "tutorial"
+    
+    @pytest.mark.asyncio
+    async def test_async_delete_documents(self):
+        """Test async delete_documents method."""
+        store = VectorStore()
+        documents = [
+            {"content": "Document 1", "id": "doc1"},
+            {"content": "Document 2", "id": "doc2"},
+            {"content": "Document 3", "id": "doc3"}
+        ]
+        store.add_documents(documents)
+        
+        initial_count = len(store.documents)
+        assert initial_count == 3
+        
+        # Delete one document
+        await store.delete_documents(["doc2"])
+        assert len(store.documents) == 2
+        assert len(store.vectors) == 2
+        
+        # Verify correct document was deleted
+        remaining_ids = [doc.get("id") for doc in store.documents]
+        assert "doc2" not in remaining_ids
+        assert "doc1" in remaining_ids
+        assert "doc3" in remaining_ids
+        
+        # Delete multiple documents
+        await store.delete_documents(["doc1", "doc3"])
+        assert len(store.documents) == 0
+        assert len(store.vectors) == 0
+    
+    @pytest.mark.asyncio
+    async def test_async_delete_by_index(self):
+        """Test deleting documents by index when no id field exists."""
+        store = VectorStore()
+        documents = [
+            {"content": "Document 1"},
+            {"content": "Document 2"},
+            {"content": "Document 3"}
+        ]
+        store.add_documents(documents)
+        
+        # Delete by index (should use string index as fallback)
+        await store.delete_documents(["1"])  # Should delete second document
+        assert len(store.documents) == 2
+        
+        remaining_contents = [doc["content"] for doc in store.documents]
+        assert "Document 2" not in remaining_contents
+        assert "Document 1" in remaining_contents
+        assert "Document 3" in remaining_contents

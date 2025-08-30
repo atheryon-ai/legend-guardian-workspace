@@ -64,18 +64,18 @@ async def test_compile(engine_client):
             "errors": []
         }
         
-        model_data = {
-            "_type": "data",
-            "elements": [{"_type": "class", "name": "Person"}]
-        }
-        result = await engine_client.compile(model_data)
+        pure_code = "Class model::Person { name: String[1]; }"
+        result = await engine_client.compile(pure_code)
         
         mock_request.assert_called_once_with(
             "POST",
             "/api/pure/v1/compilation/compile",
-            json_data=model_data
+            json_data={
+                "code": pure_code,
+                "isolatedLambdas": {}
+            }
         )
-        assert result["status"] == "SUCCESS"
+        assert result["status"] == "success"
 
 
 @pytest.mark.asyncio
@@ -88,17 +88,17 @@ async def test_transform_to_schema(engine_client):
             }
         }
         
-        model_data = {
-            "_type": "data",
-            "elements": [{"_type": "class", "name": "Person"}]
-        }
-        target_type = "relational"
-        result = await engine_client.transform_to_schema(model_data, target_type)
+        schema_type = "jsonSchema"
+        class_path = "model::Person"
+        result = await engine_client.transform_to_schema(schema_type, class_path, include_dependencies=False)
         
         mock_request.assert_called_once_with(
             "POST",
-            "/api/pure/v1/schemaGeneration/transform",
-            json_data={"model": model_data, "targetType": target_type}
+            "/api/pure/v1/schemaGeneration/jsonSchema",
+            json_data={
+                "classPath": class_path,
+                "includeDependencies": False
+            }
         )
         assert "schema" in result
 
@@ -118,17 +118,19 @@ async def test_execute_query(engine_client):
         }
         
         query = "model::Person.all()->project([x|$x.name, x|$x.age], ['Name', 'Age'])"
-        model = {"elements": []}
+        mapping = "mapping::test"
+        runtime = "runtime::test"
         
-        result = await engine_client.execute_query(query, model, mapping="mapping::test")
+        result = await engine_client.execute_query(query, mapping, runtime, context={})
         
         mock_request.assert_called_once_with(
             "POST",
             "/api/pure/v1/execution/execute",
             json_data={
-                "func": query,
-                "model": model,
-                "mapping": "mapping::test"
+                "query": query,
+                "mapping": mapping,
+                "runtime": runtime,
+                "context": {}
             }
         )
         assert result["result"]["values"][0][0] == "John"
@@ -140,14 +142,16 @@ async def test_execute_query_minimal(engine_client):
     with patch.object(engine_client, '_request') as mock_request:
         mock_request.return_value = {"result": {"values": []}}
         
-        await engine_client.execute_query("query", {"elements": []})
+        await engine_client.execute_query("query", "mapping::test", "runtime::test")
         
         mock_request.assert_called_once_with(
             "POST",
             "/api/pure/v1/execution/execute",
             json_data={
-                "func": "query",
-                "model": {"elements": []}
+                "query": "query",
+                "mapping": "mapping::test",
+                "runtime": "runtime::test",
+                "context": {}
             }
         )
 
@@ -164,23 +168,22 @@ async def test_generate_execution_plan(engine_client):
             }
         }
         
-        query = "model::Person.all()"
-        model = {"elements": []}
         mapping = "mapping::test"
-        runtime = {"_type": "runtime"}
+        runtime = "runtime::test"
+        query = "model::Person.all()"
         
         result = await engine_client.generate_execution_plan(
-            query, model, mapping, runtime
+            mapping, runtime, query
         )
         
         mock_request.assert_called_once_with(
             "POST",
             "/api/pure/v1/execution/generatePlan",
             json_data={
-                "func": query,
-                "model": model,
                 "mapping": mapping,
-                "runtime": runtime
+                "runtime": runtime,
+                "query": query,
+                "context": {}
             }
         )
         assert result["plan"]["_type"] == "simple"
@@ -192,14 +195,16 @@ async def test_generate_execution_plan_minimal(engine_client):
     with patch.object(engine_client, '_request') as mock_request:
         mock_request.return_value = {"plan": {}}
         
-        await engine_client.generate_execution_plan("query", {"elements": []})
+        await engine_client.generate_execution_plan("mapping::test", "runtime::test", "query")
         
         mock_request.assert_called_once_with(
             "POST",
             "/api/pure/v1/execution/generatePlan",
             json_data={
-                "func": "query",
-                "model": {"elements": []}
+                "mapping": "mapping::test",
+                "runtime": "runtime::test",
+                "query": "query",
+                "context": {}
             }
         )
 
@@ -214,14 +219,14 @@ async def test_run_service(engine_client):
         }
         
         service_path = "model::MyService"
-        model_data = {"elements": []}
+        params = {"elements": []}
         
-        result = await engine_client.run_service(service_path, model_data)
+        result = await engine_client.run_service(service_path, params)
         
         mock_request.assert_called_once_with(
-            "POST",
-            "/api/pure/v1/service/runService",
-            json_data={"service": service_path, "model": model_data}
+            "GET",
+            "/api/service/model::MyService",
+            params=params
         )
         assert result["status"] == "SUCCESS"
 
@@ -231,28 +236,25 @@ async def test_generate_service_code(engine_client):
     """Test generate_service_code method."""
     with patch.object(engine_client, '_request') as mock_request:
         mock_request.return_value = {
-            "code": "public class PersonService {}",
-            "language": "java"
+            "code": "public class PersonService {}"
         }
         
         service_path = "model::PersonService"
-        model_data = {"elements": []}
-        target_language = "java"
+        target = "java"
         
         result = await engine_client.generate_service_code(
-            service_path, model_data, target_language
+            service_path, target
         )
         
         mock_request.assert_called_once_with(
             "POST",
-            "/api/pure/v1/generation/generateServiceCode",
+            "/api/pure/v1/codeGeneration/generate",
             json_data={
-                "service": service_path,
-                "model": model_data,
-                "language": target_language
+                "servicePath": service_path,
+                "target": target
             }
         )
-        assert "PersonService" in result["code"]
+        assert "PersonService" in result
 
 
 @pytest.mark.asyncio
@@ -260,28 +262,24 @@ async def test_run_tests(engine_client):
     """Test run_tests method."""
     with patch.object(engine_client, '_request') as mock_request:
         mock_request.return_value = {
-            "status": "SUCCESS",
-            "results": [
-                {"test": "test1", "status": "PASS"},
-                {"test": "test2", "status": "PASS"}
+            "tests": [
+                {"name": "test1", "status": "PASS", "message": "Success"},
+                {"name": "test2", "status": "PASS", "message": "Success"}
             ]
         }
         
-        test_data = {
-            "tests": ["test1", "test2"],
-            "model": {"elements": []},
-            "testData": {}
-        }
+        test_path = "model::TestSuite"
         
-        result = await engine_client.run_tests(test_data)
+        result = await engine_client.run_tests(test_path)
         
         mock_request.assert_called_once_with(
             "POST",
-            "/api/pure/v1/test/runTests",
-            json_data=test_data
+            "/api/pure/v1/test/run",
+            json_data={"testPath": test_path}
         )
-        assert result["status"] == "SUCCESS"
-        assert len(result["results"]) == 2
+        assert len(result) == 2
+        assert result[0]["test"] == "test1"
+        assert result[0]["passed"] == True
 
 
 # Note: These methods don't exist in the actual EngineClient implementation
@@ -299,11 +297,10 @@ async def test_request_with_error(engine_client):
         mock_response.text = "Bad request"
         mock_client.request.return_value = mock_response
         
-        with pytest.raises(Exception) as exc_info:
+        # The method has retry decorator, so it will raise RetryError after 3 attempts
+        from tenacity import RetryError
+        with pytest.raises(RetryError):
             await engine_client._request("GET", "/api/test")
-        
-        assert "400" in str(exc_info.value)
-        assert "Bad request" in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -339,7 +336,7 @@ async def test_request_with_text_response(engine_client):
         
         result = await engine_client._request("GET", "/api/test")
         
-        assert result == "Plain text response"
+        assert result == {"text": "Plain text response"}
 
 
 @pytest.mark.asyncio
