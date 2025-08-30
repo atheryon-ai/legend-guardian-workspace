@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+httpx
+tenacity
+structlog
+opentelemetry-distro
+opentelemetry-instrumentation-fastapi
+pyyaml
+python-dotenv
+pytest
+pytest-asyncio
