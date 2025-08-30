@@ -1,7 +1,5 @@
 
 from typing import Dict, Any, List
-
-from typing import Dict, Any, List
 import json
 from src.clients.engine import engine_client
 from src.clients.sdlc import sdlc_client
@@ -11,6 +9,7 @@ from src.agent.memory import memory
 from src.agent.policies import policy
 
 from src.agent.llm_client import llm_client
+
 
 class Orchestrator:
     def _generate_dummy_entities(self, source: str, target: str) -> List[Dict]:
@@ -89,7 +88,7 @@ class Orchestrator:
 
     async def _analyze_table(self, params: Dict[str, Any], project_id: str, workspace_id: str) -> Dict[str, Any]:
         """Analyzes a database table and returns its schema."""
-        table_name = params.get("table_name")
+        # table_name = params.get("table_name")  # Currently unused
         # Placeholder for database connection and introspection
         dummy_schema = {
             "columns": [
@@ -157,13 +156,15 @@ class Orchestrator:
         print(f"Running constraint tests: {params.get('tests')}")
         return {"status": "success"}
 
-    async def _generate_positive_tests(self, params: Dict[str, Any], project_id: str, workspace_id: str) -> Dict[str, Any]:
+    async def _generate_positive_tests(
+            self, params: Dict[str, Any], project_id: str, workspace_id: str) -> Dict[str, Any]:
         """Generates positive test data for a service."""
         # Placeholder implementation
         print(f"Generating positive tests for service: {params.get('service')}")
         return {"status": "success", "tests": []}
 
-    async def _generate_negative_tests(self, params: Dict[str, Any], project_id: str, workspace_id: str) -> Dict[str, Any]:
+    async def _generate_negative_tests(
+            self, params: Dict[str, Any], project_id: str, workspace_id: str) -> Dict[str, Any]:
         """Generates negative test data for a service."""
         # Placeholder implementation
         print(f"Generating negative tests for service: {params.get('service')}")
@@ -174,7 +175,8 @@ class Orchestrator:
         versions = await depot_client.list_versions(project_id)
         return {"status": "success", "versions": versions}
 
-    async def _find_last_good_version(self, params: Dict[str, Any], project_id: str, workspace_id: str) -> Dict[str, Any]:
+    async def _find_last_good_version(self, params: Dict[str, Any], project_id: str,
+                                      workspace_id: str) -> Dict[str, Any]:
         """Finds the last good version of a project."""
         # Placeholder implementation
         return {"status": "success", "version": "1.0.0"}
@@ -197,12 +199,14 @@ class Orchestrator:
         print(f"Creating data product: {params.get('name')}")
         return {"status": "success"}
 
-    async def _export_schema(self, params: Dict[str, Any], project_id: str, workspace_id: str) -> Dict[str, Any]:
+    async def _export_schema(self, params: Dict[str, Any], project_id: str,
+                             workspace_id: str) -> Dict[str, Any]:
         """Exports the schema of a data product."""
         # Placeholder implementation
         return {"status": "success", "schema": {}}
 
-    async def _generate_evidence_bundle(self, params: Dict[str, Any], project_id: str, workspace_id: str) -> Dict[str, Any]:
+    async def _generate_evidence_bundle(self, params: Dict[str, Any], project_id: str,
+                                        workspace_id: str) -> Dict[str, Any]:
         """Generates an evidence bundle for a governance audit."""
         # Placeholder implementation
         return {"status": "success", "bundle": {}}
@@ -229,12 +233,12 @@ class Orchestrator:
     async def _generate_service(self, params: Dict[str, Any], project_id: str, workspace_id: str) -> Dict[str, Any]:
         """Generate REST service endpoint."""
         service_path = params.get("path", "generated/service")
-        result = await engine_client.generate_service(
-            project_id=project_id,
-            workspace_id=workspace_id,
-            service_path=service_path,
-            query=params.get("query", "")
-        )
+        # result = await engine_client.generate_service(
+        #     project_id=project_id,
+        #     workspace_id=workspace_id,
+        #     service_path=service_path,
+        #     query=params.get("query", "")
+        # )
         return {"service_path": service_path, "url": f"/api/service/{service_path}"}
 
     async def _open_review(self, params: Dict[str, Any], project_id: str, workspace_id: str) -> Dict[str, Any]:
@@ -267,7 +271,8 @@ class Orchestrator:
 
         return await llm_client.parse_intent(prompt)
 
-    async def execute_plan(self, plan: Dict[str, Any], prompt: str, project_id: str, workspace_id: str) -> Dict[str, Any]:
+    async def execute_plan(self, plan: Dict[str, Any], prompt: str, project_id: str,
+                           workspace_id: str) -> Dict[str, Any]:
         """Executes a plan and saves the episode."""
         logs = []
         artifacts = []
@@ -351,6 +356,7 @@ class Orchestrator:
         results = {"logs": logs, "artifacts": artifacts}
         await memory.save_episode(prompt, plan, results)
         return results
+
 
 # Export a module-level orchestrator instance expected by API routers
 orchestrator = Orchestrator()

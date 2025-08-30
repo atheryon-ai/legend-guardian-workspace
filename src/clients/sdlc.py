@@ -43,7 +43,7 @@ class LegendSdlcClient:
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
     async def upsert_entities(self, project_id: str, workspace_id: str,
-                               entities: List[Dict], replace: bool = False) -> dict:
+                              entities: List[Dict], replace: bool = False) -> dict:
         """Upsert entities in a workspace."""
         try:
             payload = {"replace": replace, "entities": entities}
