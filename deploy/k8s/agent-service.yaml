@@ -1,0 +1,17 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: legend-guardian-agent
+  namespace: legend-guardian
+  labels:
+    app: legend-guardian-agent
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8000
+      protocol: TCP
+      name: http
+  selector:
+    app: legend-guardian-agent

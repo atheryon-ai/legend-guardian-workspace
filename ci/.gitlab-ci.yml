@@ -1,0 +1,55 @@
+
+stages:
+  - lint
+  - test
+  - build
+  - publish
+  - deploy
+
+variables:
+  DOCKER_IMAGE_NAME: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}
+
+lint:
+  stage: lint
+  script:
+    - echo "Linting not yet implemented. Will use ruff, isort, black, yamllint."
+
+_test:
+  stage: test
+  script:
+    - echo "Testing not yet implemented. Will use pytest."
+
+build:
+  stage: build
+  script:
+    - echo "Docker build not yet implemented."
+    - docker build -t ${DOCKER_IMAGE_NAME} .
+
+publish:
+  stage: publish
+  script:
+    - echo "Publishing not yet implemented."
+    - docker push ${DOCKER_IMAGE_NAME}
+  only:
+    - main
+
+deploy_staging:
+  stage: deploy
+  script:
+    - echo "Deploying to staging not yet implemented."
+    - kubectl apply -f deploy/k8s
+  environment:
+    name: staging
+  only:
+    - main
+
+deploy_production:
+  stage: deploy
+  script:
+    - echo "Deploying to production not yet implemented."
+    - kubectl apply -f deploy/k8s
+  environment:
+    name: production
+  when: manual
+  only:
+    - main

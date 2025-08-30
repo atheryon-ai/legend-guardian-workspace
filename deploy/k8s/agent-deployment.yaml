@@ -1,0 +1,45 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legend-guardian-agent
+  namespace: legend-guardian
+  labels:
+    app: legend-guardian-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: legend-guardian-agent
+  template:
+    metadata:
+      labels:
+        app: legend-guardian-agent
+    spec:
+      containers:
+        - name: legend-guardian-agent
+          image: $(REGISTRY)/legend-guardian:$(CI_COMMIT_SHA)
+          ports:
+            - containerPort: 8000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1.5Gi"
+              cpu: "1"
+          envFrom:
+            - secretRef:
+                name: legend-guardian-secrets # Placeholder for Key Vault CSI

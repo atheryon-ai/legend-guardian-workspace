@@ -1,0 +1,14 @@
+# Update these owners to real GitHub users or teams
+# Examples: @your-org/maintainers or @username
+
+# Default owners
+*                       @maintainers
+
+# Area owners
+/src/api/               @api-maintainers
+/src/agent/             @agent-maintainers
+/src/config/            @platform-maintainers
+/tests/                 @qa-maintainers
+/deploy/                @devops-maintainers
+/docs/                  @docs-maintainers
+/AGENTS.md              @docs-maintainers

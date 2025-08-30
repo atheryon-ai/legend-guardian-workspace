@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Legend Guardian GUI</title>
+    <link rel="stylesheet" href="/gui/static/styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Legend Guardian</h1>
+      <div class="hdr-actions">
+        <button id="openSettings" class="ghost" title="Open settings" type="button">⚙ Settings</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="card" aria-labelledby="health-title">
+        <div class="card-header">
+          <h2 id="health-title">Health</h2>
+          <button id="checkHealth" type="button">Check</button>
+        </div>
+        <pre id="healthOut" class="out">Press Check to query /health</pre>
+      </section>
+
+      <section class="card" aria-labelledby="intent-title">
+        <div class="card-header">
+          <h2 id="intent-title">Intent</h2>
+          <div class="hint">POST <code>/api/intent</code> (requires <code>X-API-Key</code>)</div>
+        </div>
+
+        <form id="intentForm" novalidate>
+        <div class="grid">
+          <label>
+            Project ID
+            <input id="projectId" type="text" placeholder="demo-project" />
+            <span id="projectIdErr" class="err-msg" aria-live="polite"></span>
+          </label>
+          <label>
+            Workspace ID
+            <input id="workspaceId" type="text" placeholder="terry-dev" />
+            <span id="workspaceIdErr" class="err-msg" aria-live="polite"></span>
+          </label>
+        </div>
+
+        <label>
+          Prompt
+          <textarea id="prompt" rows="4" placeholder="ingest fx_options.csv -> CDM.Trade; compile; open PR; publish byNotional service"></textarea>
+          <span id="promptErr" class="err-msg" aria-live="polite"></span>
+        </label>
+
+        <div class="examples">
+          <span class="muted">Examples:</span>
+          <button class="pill example" type="button" data-example="ingest trades.csv -> domain.Trade; compile; open PR; publish trades/byNotional">Ingest + Compile + PR + Publish</button>
+          <button class="pill example" type="button" data-example="compile">Compile Only</button>
+          <button class="pill example" type="button" data-example="search FX option models">Search Depot</button>
+        </div>
+
+        <div class="actions">
+          <button id="runIntent" type="button">Run Intent</button>
+          <button id="copyCurl" class="ghost" title="Copy cURL" type="button">Copy cURL</button>
+          <span id="intentStatus" class="muted"></span>
+        </div>
+        </form>
+
+        <details open>
+          <summary>Plan</summary>
+          <pre id="planOut" class="out">Plan will appear here</pre>
+        </details>
+
+        <details>
+          <summary>Logs</summary>
+          <pre id="logsOut" class="out"></pre>
+        </details>
+
+        <details>
+          <summary>Artifacts</summary>
+          <pre id="artifactsOut" class="out"></pre>
+        </details>
+
+        <details>
+          <summary>Raw Response</summary>
+          <pre id="rawOut" class="out"></pre>
+        </details>
+
+        <details>
+          <summary>Request Schema</summary>
+          <pre id="schemaOut" class="out">Loading OpenAPI schema…</pre>
+        </details>
+      </section>
+    </main>
+
+    <footer>
+      <span class="muted">/gui static UI • same-origin</span>
+    </footer>
+
+    <!-- Settings Drawer -->
+    <div id="settingsBackdrop" class="backdrop" hidden></div>
+    <aside id="settings" class="drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="settingsTitle" aria-label="Settings">
+      <div class="drawer-header">
+        <h3 id="settingsTitle">Settings</h3>
+        <button id="closeSettings" class="ghost" title="Close" type="button">✕</button>
+      </div>
+      <div class="drawer-body">
+        <label>
+          API Key
+          <input id="apiKey" type="password" placeholder="X-API-Key" />
+        </label>
+        <div class="grid">
+          <label>
+            Default Project ID
+            <input id="defaultProjectId" type="text" placeholder="demo-project" />
+          </label>
+          <label>
+            Default Workspace ID
+            <input id="defaultWorkspaceId" type="text" placeholder="terry-dev" />
+          </label>
+        </div>
+        <div class="actions">
+          <button id="saveKey" type="button">Save</button>
+          <span id="saveStatus" class="muted"></span>
+        </div>
+        <p class="muted">Stored in your browser’s localStorage.</p>
+      </div>
+    </aside>
+
+    <script src="/gui/static/app.js" defer></script>
+  </body>
+  </html>

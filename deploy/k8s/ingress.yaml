@@ -1,0 +1,26 @@
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: legend-guardian-ingress
+  namespace: legend-guardian
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: legend-guardian-agent
+                port:
+                  number: 80
+          - path: /api/service(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: legend-engine # Assuming engine service is named this
+                port:
+                  number: 80
