@@ -1,7 +1,8 @@
 
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 from src.rag.store import vector_store
+
 
 class LLMClient:
     def __init__(self, provider: str = "openai", model: str = "gpt-4"):
@@ -22,7 +23,7 @@ class LLMClient:
         elif self.provider == "ollama":
             return await self._parse_with_ollama(enriched_prompt)
         else:
-            return self._parse_with_rule_based(prompt) # Rule-based doesn't use context
+            return self._parse_with_rule_based(prompt)  # Rule-based doesn't use context
 
     async def _parse_with_openai(self, prompt: str) -> Dict[str, Any]:
         # Placeholder for OpenAI implementation
@@ -51,7 +52,10 @@ class LLMClient:
             elif "compile" in command:
                 plan["steps"].append({"action": "engine.compile", "params": {}})
             elif "review" in command or "PR" in command:
-                plan["steps"].append({"action": "sdlc.open_review", "params": {"title": f"Review for {prompt}", "description": command}})
+                plan["steps"].append({
+                    "action": "sdlc.open_review",
+                    "params": {"title": f"Review for {prompt}", "description": command}
+                })
             elif "publish" in command:
                 service_name = command.replace("publish", "").strip()
                 plan["steps"].append({"action": "engine.run_service", "params": {"path": service_name, "params": {}}})
@@ -59,5 +63,6 @@ class LLMClient:
                 plan["steps"].append({"action": "depot.search", "params": {"query": command}})
 
         return plan
+
 
 llm_client = LLMClient()

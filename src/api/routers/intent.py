@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, Depends, Body
+from fastapi import APIRouter, Depends
 from src.agent.orchestrator import orchestrator
 from src.api.deps import get_api_key
 from pydantic import BaseModel
@@ -7,17 +7,19 @@ from typing import Optional
 
 router = APIRouter()
 
+
 class IntentPayload(BaseModel):
     prompt: str
     projectId: Optional[str] = None
     workspaceId: Optional[str] = None
 
+
 @router.post("/intent", dependencies=[Depends(get_api_key)])
 async def process_intent(payload: IntentPayload):
     """Process a user intent to generate and execute a plan."""
     plan = await orchestrator.create_plan(
-        prompt=payload.prompt, 
-        project_id=payload.projectId, 
+        prompt=payload.prompt,
+        project_id=payload.projectId,
         workspace_id=payload.workspaceId
     )
     

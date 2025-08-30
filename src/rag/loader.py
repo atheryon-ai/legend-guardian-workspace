@@ -1,10 +1,9 @@
 
-from typing import List, Dict
-
 import os
 import json
 import yaml
 from typing import List, Dict
+
 
 class Loader:
     async def load_documents(self, paths: List[str]) -> List[Dict]:
@@ -24,5 +23,6 @@ class Loader:
             except Exception as e:
                 print(f"Error loading document {path}: {e}")
         return documents
+
 
 loader = Loader()

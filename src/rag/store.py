@@ -1,7 +1,6 @@
 
 from typing import List, Dict
 
-from typing import List, Dict
 
 class VectorStore:
     def __init__(self):
@@ -19,5 +18,6 @@ class VectorStore:
             if text in content:
                 results.append({"path": path, "content": content})
         return results
+
 
 vector_store = VectorStore()

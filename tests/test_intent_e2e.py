@@ -4,6 +4,7 @@ from src.api.main import app
 
 client = TestClient(app)
 
+
 def test_intent_e2e_use_case_1():
     payload = {
         "prompt": "ingest fx_options.csv -> CDM.Trade; compile; open PR; publish byNotional service",

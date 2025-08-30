@@ -3,6 +3,7 @@ import httpx
 from tenacity import retry, stop_after_attempt, wait_fixed
 from src.settings import settings
 
+
 class LegendEngineClient:
     def __init__(self):
         self.base_url = settings.ENGINE_URL
@@ -13,7 +14,10 @@ class LegendEngineClient:
     async def compile(self, pure_code: str, project_id: str, workspace_id: str) -> dict:
         """Compile PURE code."""
         try:
-            response = await self.client.post(f"/api/pure/v1/compilation/compile?projectId={project_id}&workspaceId={workspace_id}", content=pure_code)
+            response = await self.client.post(
+                f"/api/pure/v1/compilation/compile?projectId={project_id}&workspaceId={workspace_id}",
+                content=pure_code
+            )
             response.raise_for_status()
             return response.json()
         except httpx.HTTPStatusError as e:
@@ -67,10 +71,14 @@ class LegendEngineClient:
                 "path": service_path,
                 "query": query
             }
-            response = await self.client.post(f"/api/pure/v1/service/generation?projectId={project_id}&workspaceId={workspace_id}", json=payload)
+            response = await self.client.post(
+                f"/api/pure/v1/service/generation?projectId={project_id}&workspaceId={workspace_id}",
+                json=payload
+            )
             response.raise_for_status()
             return response.json()
         except httpx.HTTPStatusError as e:
             return {"status": "error", "message": str(e)}
+
 
 engine_client = LegendEngineClient()

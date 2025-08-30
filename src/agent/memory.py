@@ -1,10 +1,8 @@
 
-from typing import Dict, Any
 import datetime
-
 import json
-import datetime
 from typing import Dict, Any
+
 
 class Memory:
     def __init__(self, episode_dir: str = "episodes"):
@@ -23,5 +21,6 @@ class Memory:
         filename = f"{self.episode_dir}/{timestamp}.json"
         with open(filename, "w") as f:
             json.dump(episode, f, indent=4)
+
 
 memory = Memory()

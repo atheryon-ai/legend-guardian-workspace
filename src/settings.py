@@ -2,6 +2,7 @@
 from pydantic_settings import BaseSettings
 from typing import List
 
+
 class Settings(BaseSettings):
     ENGINE_URL: str = "http://localhost:6300"
     SDLC_URL: str = "http://localhost:6100"
@@ -21,5 +22,6 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+
 
 settings = Settings()

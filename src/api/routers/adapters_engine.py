@@ -6,8 +6,10 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
+
 class TransformPayload(BaseModel):
     classPath: str
+
 
 @router.post("/adapters/engine/transform/{schema_type}", dependencies=[Depends(get_api_key)])
 async def transform(schema_type: str, payload: TransformPayload):

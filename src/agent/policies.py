@@ -1,6 +1,7 @@
 
 import re
-from typing import Dict, Any, List
+from typing import List
+
 
 class Policy:
     def check_pii(self, text: str) -> List[str]:
@@ -21,5 +22,6 @@ class Policy:
         """Checks if the review gates (compile and test) are passed."""
         # Placeholder implementation
         return compile_status and test_status
+
 
 policy = Policy()

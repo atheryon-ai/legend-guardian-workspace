@@ -27,6 +27,7 @@ app.mount(
     name="gui-static",
 )
 
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the Legend Guardian Agent"}

@@ -4,6 +4,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 from src.settings import settings
 from typing import List, Dict
 
+
 class LegendSdlcClient:
     def __init__(self):
         self.base_url = settings.SDLC_URL
@@ -17,7 +18,7 @@ class LegendSdlcClient:
             response = await self.client.get("/projects")
             response.raise_for_status()
             return response.json()
-        except httpx.HTTPStatusError as e:
+        except httpx.HTTPStatusError:
             return []
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
@@ -27,7 +28,7 @@ class LegendSdlcClient:
             response = await self.client.get(f"/projects/{project_id}/workspaces/{workspace_id}/entities")
             response.raise_for_status()
             return response.json()
-        except httpx.HTTPStatusError as e:
+        except httpx.HTTPStatusError:
             return []
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
@@ -41,11 +42,14 @@ class LegendSdlcClient:
             return {"status": "error", "message": str(e)}
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
-    async def upsert_entities(self, project_id: str, workspace_id: str, entities: List[Dict], replace: bool = False) -> dict:
+    async def upsert_entities(self, project_id: str, workspace_id: str,
+                               entities: List[Dict], replace: bool = False) -> dict:
         """Upsert entities in a workspace."""
         try:
             payload = {"replace": replace, "entities": entities}
-            response = await self.client.post(f"/projects/{project_id}/workspaces/{workspace_id}/entities", json=payload)
+            response = await self.client.post(
+                f"/projects/{project_id}/workspaces/{workspace_id}/entities", json=payload
+            )
             response.raise_for_status()
             return response.json()
         except httpx.HTTPStatusError as e:
@@ -72,5 +76,6 @@ class LegendSdlcClient:
             return response.json()
         except httpx.HTTPStatusError as e:
             return {"status": "error", "message": str(e)}
+
 
 sdlc_client = LegendSdlcClient()
