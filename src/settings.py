@@ -1,4 +1,3 @@
-
 from pydantic_settings import BaseSettings
 from typing import List
 
@@ -13,9 +12,9 @@ class Settings(BaseSettings):
     PROJECT_ID: str = "demo-project"
     WORKSPACE_ID: str = "terry-dev"
     SERVICE_PATH: str = "trades/byNotional"
-    
+
     VALID_API_KEYS: List[str] = ["demo-key"]
-    
+
     ENGINE_TOKEN: str = "engine-token"
     SDLC_TOKEN: str = "sdlc-token"
     DEPOT_TOKEN: str = "depot-token"

@@ -1,4 +1,3 @@
-
 import pytest
 from src.clients.sdlc import sdlc_client
 
@@ -23,7 +22,9 @@ async def test_upsert_entities():
 
 @pytest.mark.asyncio
 async def test_open_review():
-    response = await sdlc_client.open_review("project_id", "workspace_id", "title", "description")
+    response = await sdlc_client.open_review(
+        "project_id", "workspace_id", "title", "description"
+    )
     assert response == {"status": "success", "reviewId": "123"}
 
 

@@ -1,4 +1,3 @@
-
 import os
 import json
 import yaml
@@ -12,10 +11,10 @@ class Loader:
         for path in paths:
             try:
                 file_extension = os.path.splitext(path)[1]
-                with open(path, 'r') as f:
-                    if file_extension == '.json':
+                with open(path, "r") as f:
+                    if file_extension == ".json":
                         content = json.load(f)
-                    elif file_extension in ['.yaml', '.yml']:
+                    elif file_extension in [".yaml", ".yml"]:
                         content = yaml.safe_load(f)
                     else:
                         content = f.read()

@@ -1,4 +1,3 @@
-
 import httpx
 from tenacity import retry, stop_after_attempt, wait_fixed
 from src.settings import settings
@@ -9,7 +8,9 @@ class LegendDepotClient:
     def __init__(self):
         self.base_url = settings.DEPOT_URL
         self.headers = {"Authorization": f"Bearer {settings.DEPOT_TOKEN}"}
-        self.client = httpx.AsyncClient(base_url=self.base_url, headers=self.headers, timeout=30.0)
+        self.client = httpx.AsyncClient(
+            base_url=self.base_url, headers=self.headers, timeout=30.0
+        )
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
     async def search(self, query: str) -> List[Dict]:
@@ -26,7 +27,9 @@ class LegendDepotClient:
         """List all versions of a project."""
         try:
             group_id, artifact_id = project_id.split(":")
-            response = await self.client.get(f"/projects/{group_id}/{artifact_id}/versions")
+            response = await self.client.get(
+                f"/projects/{group_id}/{artifact_id}/versions"
+            )
             response.raise_for_status()
             return response.json()
         except (httpx.HTTPStatusError, ValueError):
@@ -37,7 +40,9 @@ class LegendDepotClient:
         """Get entities for a specific version of a project."""
         try:
             group_id, artifact_id = project_id.split(":")
-            response = await self.client.get(f"/projects/{group_id}/{artifact_id}/versions/{version}/entities")
+            response = await self.client.get(
+                f"/projects/{group_id}/{artifact_id}/versions/{version}/entities"
+            )
             response.raise_for_status()
             return response.json()
         except (httpx.HTTPStatusError, ValueError):

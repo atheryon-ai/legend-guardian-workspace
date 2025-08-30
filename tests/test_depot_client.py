@@ -1,4 +1,3 @@
-
 import pytest
 from src.clients.depot import depot_client
 
