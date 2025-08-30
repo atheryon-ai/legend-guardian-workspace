@@ -1,6 +1,8 @@
 """API dependencies and authentication."""
 
-from typing import Annotated
+from __future__ import annotations
+
+from typing import Annotated, Optional
 
 import structlog
 from fastapi import Depends, HTTPException, Header, Request, Security
@@ -35,14 +37,14 @@ async def get_api_key(  # Also aliased as verify_api_key for compatibility
 
 async def get_correlation_id(
     request: Request,
-    x_correlation_id: Annotated[str | None, Header()] = None,
+    x_correlation_id: Annotated[Optional[str], Header()] = None,
 ) -> str:
     """Get correlation ID from request."""
     return x_correlation_id or getattr(request.state, "correlation_id", "unknown")
 
 
 async def get_project_id(
-    project_id: str | None = None,
+    project_id: Optional[str] = None,
     settings: Annotated[Settings, Depends(get_settings)] = None,
 ) -> str:
     """Get project ID from request or use default."""
@@ -50,7 +52,7 @@ async def get_project_id(
 
 
 async def get_workspace_id(
-    workspace_id: str | None = None,
+    workspace_id: Optional[str] = None,
     settings: Annotated[Settings, Depends(get_settings)] = None,
 ) -> str:
     """Get workspace ID from request or use default."""
@@ -128,6 +130,6 @@ class PIIRedactor:
 
 async def get_pii_redactor(
     settings: Annotated[Settings, Depends(get_settings)]
-) -> PIIRedactor | None:
+) -> Optional[PIIRedactor]:
     """Get PII redactor if enabled."""
     return PIIRedactor() if settings.pii_redaction_enabled else None

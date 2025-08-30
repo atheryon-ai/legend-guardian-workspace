@@ -1,6 +1,8 @@
 """Legend SDLC adapter endpoints."""
 
-from typing import Any, Dict, List
+from __future__ import annotations
+
+from typing import Any, Dict, List, Optional
 
 import structlog
 from fastapi import APIRouter, Body, Depends, HTTPException, Path
@@ -34,7 +36,7 @@ class ReviewRequest(BaseModel):
     
     title: str = Field(..., description="Review title")
     description: str = Field(..., description="Review description")
-    workspace_id: str | None = None
+    workspace_id: Optional[str] = None
     labels: List[str] = Field(default_factory=list, description="Review labels")
 
 
@@ -43,7 +45,7 @@ class VersionRequest(BaseModel):
     
     version_id: str = Field(..., description="Version identifier")
     notes: str = Field(..., description="Version notes")
-    review_id: str | None = Field(None, description="Associated review ID")
+    review_id: Optional[str] = Field(None, description="Associated review ID")
 
 
 @router.get("/projects")

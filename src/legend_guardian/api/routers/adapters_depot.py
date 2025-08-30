@@ -1,6 +1,8 @@
 """Legend Depot adapter endpoints."""
 
-from typing import Any, Dict, List
+from __future__ import annotations
+
+from typing import Any, Dict, List, Optional
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Body
@@ -21,8 +23,8 @@ class DepotProject(BaseModel):
     group_id: str
     artifact_id: str
     versions: List[str]
-    latest_version: str | None = None
-    description: str | None = None
+    latest_version: Optional[str] = None
+    description: Optional[str] = None
 
 
 class DepotEntity(BaseModel):

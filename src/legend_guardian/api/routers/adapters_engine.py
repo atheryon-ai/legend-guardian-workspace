@@ -1,6 +1,8 @@
 """Legend Engine adapter endpoints."""
 
-from typing import Any, Dict, List, Literal
+from __future__ import annotations
+
+from typing import Any, Dict, List, Literal, Optional
 
 import structlog
 from fastapi import APIRouter, Body, Depends, HTTPException
@@ -18,16 +20,16 @@ class CompileRequest(BaseModel):
     """PURE compilation request."""
     
     pure: str = Field(..., description="PURE code to compile")
-    project_id: str | None = None
-    workspace_id: str | None = None
+    project_id: Optional[str] = None
+    workspace_id: Optional[str] = None
 
 
 class CompileResponse(BaseModel):
     """Compilation response."""
     
     ok: bool
-    details: Dict[str, Any] | None = None
-    errors: List[Dict[str, Any]] | None = None
+    details: Optional[Dict[str, Any]] = None
+    errors: Optional[List[Dict[str, Any]]] = None
 
 
 class ExecutionPlanRequest(BaseModel):
@@ -194,7 +196,7 @@ async def run_service(
 
 @router.post("/test/run")
 async def run_tests(
-    test_path: str | None = None,
+    test_path: Optional[str] = None,
     api_key: str = Depends(verify_api_key),
     correlation_id: str = Depends(get_correlation_id),
     settings: Settings = Depends(get_settings),

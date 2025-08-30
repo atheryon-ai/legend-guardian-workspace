@@ -1,6 +1,8 @@
 """Use case flow endpoints."""
 
-from typing import Any, Dict, List
+from __future__ import annotations
+
+from typing import Any, Dict, List, Optional
 
 import structlog
 from fastapi import APIRouter, Body, Depends, HTTPException
@@ -76,7 +78,7 @@ class IncidentRollbackRequest(BaseModel):
     """Use Case 8: Incident Response / Rollback."""
     
     service_path: str = Field(..., description="Service to rollback")
-    target_version: str | None = Field(None, description="Target version (or auto-detect)")
+    target_version: Optional[str] = Field(None, description="Target version (or auto-detect)")
     create_hotfix: bool = Field(True, description="Create hotfix workspace")
 
 

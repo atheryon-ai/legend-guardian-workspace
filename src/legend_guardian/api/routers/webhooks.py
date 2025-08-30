@@ -1,6 +1,8 @@
 """Webhook endpoints for external integrations."""
 
-from typing import Any, Dict
+from __future__ import annotations
+
+from typing import Any, Dict, Optional, List
 
 import structlog
 from fastapi import APIRouter, Body, Depends, Header, HTTPException
@@ -18,8 +20,8 @@ class SDLCWebhookPayload(BaseModel):
     
     event_type: str = Field(..., description="Event type (review.created, review.merged, etc.)")
     project_id: str
-    workspace_id: str | None = None
-    review_id: str | None = None
+    workspace_id: Optional[str] = None
+    review_id: Optional[str] = None
     user: str
     timestamp: str
     data: Dict[str, Any] = Field(default_factory=dict)
@@ -31,17 +33,17 @@ class GitLabWebhookPayload(BaseModel):
     object_kind: str = Field(..., description="GitLab object kind")
     event_name: str = Field(..., description="Event name")
     project: Dict[str, Any]
-    user: Dict[str, Any] | None = None
-    object_attributes: Dict[str, Any] | None = None
-    repository: Dict[str, Any] | None = None
-    commits: list[Dict[str, Any]] | None = None
-    merge_request: Dict[str, Any] | None = None
+    user: Optional[Dict[str, Any]] = None
+    object_attributes: Optional[Dict[str, Any]] = None
+    repository: Optional[Dict[str, Any]] = None
+    commits: Optional[List[Dict[str, Any]]] = None
+    merge_request: Optional[Dict[str, Any]] = None
 
 
 @router.post("/sdlc")
 async def handle_sdlc_webhook(
     payload: SDLCWebhookPayload,
-    x_sdlc_signature: str | None = Header(None),
+    x_sdlc_signature: Optional[str] = Header(None),
     correlation_id: str = Depends(get_correlation_id),
     settings: Settings = Depends(get_settings),
 ) -> Dict[str, Any]:
@@ -114,8 +116,8 @@ async def handle_sdlc_webhook(
 @router.post("/gitlab")
 async def handle_gitlab_webhook(
     payload: GitLabWebhookPayload = Body(...),
-    x_gitlab_token: str | None = Header(None),
-    x_gitlab_event: str | None = Header(None),
+    x_gitlab_token: Optional[str] = Header(None),
+    x_gitlab_event: Optional[str] = Header(None),
     correlation_id: str = Depends(get_correlation_id),
     settings: Settings = Depends(get_settings),
 ) -> Dict[str, Any]:
