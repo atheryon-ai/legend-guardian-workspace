@@ -46,7 +46,7 @@ structlog.configure(
             ]
         ),
         structlog.processors.dict_tracebacks,
-        structlog.development.ConsoleRenderer(),
+        structlog.dev.ConsoleRenderer() if settings.debug else structlog.processors.JSONRenderer(),
     ],
     context_class=dict,
     logger_factory=structlog.stdlib.LoggerFactory(),
