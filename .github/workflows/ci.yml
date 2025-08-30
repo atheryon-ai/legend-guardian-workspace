@@ -32,9 +32,9 @@ jobs:
 
       - name: Lint
         run: |
-          # Lint only the main src directory (excluding orchestrator.py which has import issues)
-          flake8 src/api src/clients src/rag src/settings.py src/web tests --max-line-length=120 || (echo "Run flake8 locally to fix issues" && exit 1)
-          black --check src/api src/clients src/rag src/settings.py tests || (echo "Run black locally to fix formatting" && exit 1)
+          # Lint all source files and tests
+          flake8 src tests --max-line-length=120 || (echo "Run flake8 locally to fix issues" && exit 1)
+          black --check src tests || (echo "Run black locally to fix formatting" && exit 1)
 
       - name: Run tests
         run: |

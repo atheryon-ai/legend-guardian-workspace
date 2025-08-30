@@ -1,0 +1,67 @@
+{
+    "intent": "ingest fx_options.csv -> CDM.Trade; compile; open PR; publish byNotional service",
+    "plan": {
+        "steps": [
+            {
+                "action": "sdlc.upsert_entities",
+                "params": {
+                    "source": "Context:\n\n\nPrompt:  fx_options.csv",
+                    "target": "CDM.Trade"
+                }
+            },
+            {
+                "action": "engine.compile",
+                "params": {
+                    "pure_code": "[]"
+                }
+            },
+            {
+                "action": "sdlc.open_review",
+                "params": {
+                    "title": "Review for Context:\n\n\nPrompt: ingest fx_options.csv -> CDM.Trade; compile; open PR; publish byNotional service",
+                    "description": "open PR"
+                }
+            },
+            {
+                "action": "engine.run_service",
+                "params": {
+                    "path": "byNotional service",
+                    "params": {},
+                    "project_id": "demo-project",
+                    "workspace_id": "terry-dev-e2e"
+                }
+            }
+        ]
+    },
+    "results": {
+        "logs": [
+            "Error executing sdlc.upsert_entities: RetryError[<Future at 0x10576c390 state=finished raised ConnectError>]",
+            "Error executing engine.compile: RetryError[<Future at 0x10576f510 state=finished raised ConnectError>]",
+            "Error executing sdlc.open_review: RetryError[<Future at 0x10576e890 state=finished raised ConnectError>]",
+            "Error executing engine.run_service: RetryError[<Future at 0x10576f690 state=finished raised TypeError>]"
+        ],
+        "artifacts": [
+            {
+                "action": "sdlc.upsert_entities",
+                "status": "error",
+                "message": "RetryError[<Future at 0x10576c390 state=finished raised ConnectError>]"
+            },
+            {
+                "action": "engine.compile",
+                "status": "error",
+                "message": "RetryError[<Future at 0x10576f510 state=finished raised ConnectError>]"
+            },
+            {
+                "action": "sdlc.open_review",
+                "status": "error",
+                "message": "RetryError[<Future at 0x10576e890 state=finished raised ConnectError>]"
+            },
+            {
+                "action": "engine.run_service",
+                "status": "error",
+                "message": "RetryError[<Future at 0x10576f690 state=finished raised TypeError>]"
+            }
+        ]
+    },
+    "timestamp": "2025-08-29T12:03:17.360643"
+}

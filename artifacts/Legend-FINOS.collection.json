@@ -1,0 +1,90 @@
+{
+    "info": {
+        "_postman_id": "a8a4e3d6-a2d4-4b8a-9c7b-8e2e3f1f1e1e",
+        "name": "Legend-FINOS",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Health",
+            "item": [
+                {
+                    "name": "Get Health",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{AGENT_URL}}/health",
+                            "host": ["{{AGENT_URL}}"],
+                            "path": ["health"]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Agent",
+            "item": [
+                {
+                    "name": "Process Intent",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{API_KEY}}",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"prompt\": \"ingest fx_options.csv -> CDM.Trade; compile; open PR; publish byNotional service\",\n    \"projectId\": \"{{PROJECT_ID}}\",\n    \"workspaceId\": \"{{WORKSPACE_ID}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{AGENT_URL}}/api/intent",
+                            "host": ["{{AGENT_URL}}"],
+                            "path": ["api", "intent"]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "ENGINE_URL",
+            "value": "http://localhost:6300"
+        },
+        {
+            "key": "SDLC_URL",
+            "value": "http://localhost:6100"
+        },
+        {
+            "key": "DEPOT_URL",
+            "value": "http://localhost:6200"
+        },
+        {
+            "key": "AGENT_URL",
+            "value": "http://localhost:8000"
+        },
+        {
+            "key": "PROJECT_ID",
+            "value": "demo-project"
+        },
+        {
+            "key": "WORKSPACE_ID",
+            "value": "terry-dev"
+        },
+        {
+            "key": "API_KEY",
+            "value": "demo-key"
+        }
+    ]
+}

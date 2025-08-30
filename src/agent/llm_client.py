@@ -1,4 +1,3 @@
-
 from typing import Dict, Any
 
 from src.rag.store import vector_store
@@ -13,7 +12,7 @@ class LLMClient:
         """Parses the user intent using the configured LLM provider with RAG."""
         context_docs = await vector_store.query(prompt)
         context = "\n".join([doc["content"] for doc in context_docs])
-        
+
         enriched_prompt = f"Context:\n{context}\n\nPrompt: {prompt}"
 
         if self.provider == "openai":
@@ -48,19 +47,36 @@ class LLMClient:
                 source = parts[0].replace("ingest", "").strip()
                 target = parts[1].strip()
                 plan["steps"].append({"action": "sdlc.create_workspace", "params": {}})
-                plan["steps"].append({"action": "sdlc.upsert_entities", "params": {"source": source, "target": target}})
+                plan["steps"].append(
+                    {
+                        "action": "sdlc.upsert_entities",
+                        "params": {"source": source, "target": target},
+                    }
+                )
             elif "compile" in command:
                 plan["steps"].append({"action": "engine.compile", "params": {}})
             elif "review" in command or "PR" in command:
-                plan["steps"].append({
-                    "action": "sdlc.open_review",
-                    "params": {"title": f"Review for {prompt}", "description": command}
-                })
+                plan["steps"].append(
+                    {
+                        "action": "sdlc.open_review",
+                        "params": {
+                            "title": f"Review for {prompt}",
+                            "description": command,
+                        },
+                    }
+                )
             elif "publish" in command:
                 service_name = command.replace("publish", "").strip()
-                plan["steps"].append({"action": "engine.run_service", "params": {"path": service_name, "params": {}}})
+                plan["steps"].append(
+                    {
+                        "action": "engine.run_service",
+                        "params": {"path": service_name, "params": {}},
+                    }
+                )
             else:
-                plan["steps"].append({"action": "depot.search", "params": {"query": command}})
+                plan["steps"].append(
+                    {"action": "depot.search", "params": {"query": command}}
+                )
 
         return plan
 
