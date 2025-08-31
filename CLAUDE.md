@@ -17,6 +17,20 @@ When in doubt, always refer to:
 2. FINOS Legend Docker Hub images
 3. Standard Legend configuration examples
 
+## CRITICAL: Docker Compose Naming Rules
+
+**ALWAYS USE LOWERCASE for Docker Compose project names!**
+- ✅ CORRECT: `COMPOSE_PROJECT_NAME=legend`
+- ❌ WRONG: `COMPOSE_PROJECT_NAME=Legend`
+
+Docker Compose project names must:
+- Use only lowercase letters (a-z)
+- Include numbers (0-9), hyphens (-), underscores (_)
+- Start with a letter or number
+- **NEVER use uppercase letters**
+
+This is a frequent error that breaks deployments. Always verify project names are lowercase.
+
 ## High-Level Architecture
 
 Legend Guardian Workspace is a Docker-based deployment of the FINOS Legend platform that orchestrates multiple microservices through Docker Compose profiles. The architecture follows a profile-based deployment strategy where services can be selectively enabled based on requirements.
@@ -131,6 +145,28 @@ curl http://localhost:6200/depot               # Depot
 5. **Configuration generation**: The setup service must run before other services
 
 ## Troubleshooting Common Issues
+
+### "Unauthorized" Error in Studio UI
+**Symptoms**: Red "Unauthorized" banner appears in Legend Studio even after successful GitLab login.
+
+**Root Cause**: Session serialization mismatch in MongoDB from incompatible Legend versions or corrupted session data.
+
+**Fix**:
+```bash
+# 1. Stop all services and remove containers
+docker ps -a | grep legend | awk '{print $1}' | xargs docker rm -f
+
+# 2. Ensure .env.local is in repository root (not in deploy/docker-finos-official)
+mv deploy/docker-finos-official/.env.local .env.local  # if needed
+
+# 3. Regenerate configurations and restart services
+cd deploy/docker-finos-official
+./run-legend.sh setup up
+./run-legend.sh studio up -d
+
+# 4. Clear browser data for localhost (or use incognito mode)
+# 5. Access http://localhost:9000/studio and complete GitLab OAuth
+```
 
 ### OAuth Authentication Failures
 1. Verify GITLAB_APP_ID and GITLAB_APP_SECRET in `.env.local`
